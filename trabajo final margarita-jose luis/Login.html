@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Acceso — CondoManager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="login.css"/>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- LEFT -->
+  <div class="panel-left">
+    <a class="brand" href="home.html">
+      <span class="brand-name">CondoManager</span>
+    </a>
+    <div class="panel-copy">
+      <h1>Acceso<br>seguro <em>y</em><br>sin fricciones.</h1>
+      <p>Una plataforma diseñada para equipos que valoran la precisión y la eficiencia.</p>
+    </div>
+    <p class="panel-footer">© 2026 CondoManager. Todos los derechos reservados.</p>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right">
+
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="show('login')">Iniciar sesión</button>
+      <button class="tab" id="tab-register" onclick="show('register')">Crear cuenta</button>
+    </div>
+
+    <div class="form-wrap">
+
+      <!-- LOGIN -->
+      <div class="form visible" id="form-login">
+        <p class="form-title">Bienvenido</p>
+        <p class="form-sub">Ingresa tus credenciales para continuar</p>
+
+        <div class="field">
+          <label>Correo electrónico</label>
+          <input type="email" id="login-email" placeholder="nombre@empresa.com"/>
+        </div>
+
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••"/>
+          <div class="forgot-wrap"><a class="forgot" href="recuperarcontrasena.html">¿Olvidaste tu contraseña?</a></div>
+        </div>
+
+        <div class="check-line">
+          <input type="checkbox" id="remember"/>
+          <span>Mantener sesión iniciada en este dispositivo</span>
+        </div>
+
+        <div id="login-alert" class="alert"></div>
+        <button class="btn-primary" onclick="doLogin()">Entrar</button>
+
+        <p class="switch-note">¿No tienes cuenta? <a onclick="show('register')">Regístrate aquí</a></p>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="form" id="form-register">
+        <p class="form-title">Crear cuenta</p>
+        <p class="form-sub">Completa tus datos para comenzar</p>
+
+        <div class="row2">
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="reg-nombre" placeholder="Ana"/>
+          </div>
+          <div class="field">
+            <label>Apellido</label>
+            <input type="text" id="reg-apellido" placeholder="López"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Correo electrónico</label>
+          <input type="email" id="reg-email" placeholder="nombre@empresa.com"/>
+        </div>
+
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="reg-password" placeholder="Mínimo 8 caracteres"/>
+          <p class="field-hint">Usa letras, números y un símbolo para mayor seguridad.</p>
+        </div>
+
+        <div class="field">
+          <label>Confirmar contraseña</label>
+          <input type="password" id="reg-password2" placeholder="Repite tu contraseña"/>
+        </div>
+
+        <div class="check-line">
+          <input type="checkbox" id="reg-terms"/>
+          <span>Acepto los <a href="#">Términos de servicio</a> y la <a href="#">Política de privacidad</a></span>
+        </div>
+
+        <div id="register-alert" class="alert"></div>
+        <button class="btn-primary" onclick="doRegister()">Crear cuenta</button>
+
+        <p class="switch-note">¿Ya tienes cuenta? <a onclick="show('login')">Inicia sesión</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="login.js"></script>
+</body>
+</html>

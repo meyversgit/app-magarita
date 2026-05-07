@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Panel de Administración — CondoManager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<!-- Toast notification -->
+<div id="toast" class="toast">
+  <span id="toast-icon" style="font-size:20px;">✅</span>
+  <div>
+    <div id="toast-title" style="font-weight:600;font-size:13.5px;color:#1a2a3a;"></div>
+    <div id="toast-msg" style="font-size:12.5px;color:#6b7c93;margin-top:1px;"></div>
+  </div>
+</div>
+
+<!-- Modal Confirm -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div style="font-size:17px;font-weight:700;color:#0f2d52;margin-bottom:8px;" id="modal-title">Confirmar acción</div>
+    <div style="font-size:13.5px;color:#6b7c93;margin-bottom:24px;" id="modal-body">¿Está seguro de que desea realizar esta acción?</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" id="modal-confirm-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <!-- Brand -->
+  <div style="padding:22px 20px 18px;border-bottom:0.5px solid rgba(255,255,255,0.08);">
+    <div style="font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:6px;">Sistema de gestión</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;background:#1a6fc4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <svg width="17" height="17" fill="none" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font-size:14.5px;font-weight:700;color:#fff;">Panel Administrador</div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav style="flex:1;padding:10px 0;">
+    <!-- Dashboard -->
+    <div style="padding:14px 20px 6px;font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.3);text-transform:uppercase;">Principal</div>
+    <button class="nav-link active" onclick="showPanel('dashboard',this)">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span style="flex:1;">Dashboard</span>
+    </button>
+
+    <div style="padding:14px 20px 6px;font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.3);text-transform:uppercase;">Gestión</div>
+
+    <!-- Residentes -->
+    <div>
+      <button class="nav-link" onclick="toggleMenu('residentes',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span style="flex:1;">Residentes</span>
+        <span class="chevron" id="chev-residentes">›</span>
+      </button>
+      <div class="submenu" id="sub-residentes">
+        <button class="sub-link" onclick="showPanel('lista-residentes',null,'residentes')">Lista de residentes</button>
+      </div>
+    </div>
+
+    <!-- Pagos -->
+    <div>
+      <button class="nav-link" onclick="toggleMenu('pagos',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M1 10h22" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span style="flex:1;">Pagos</span>
+        <span class="chevron" id="chev-pagos">›</span>
+      </button>
+      <div class="submenu" id="sub-pagos">
+        <button class="sub-link" onclick="showPanel('lista-pagos',null,'pagos')">Lista de pagos</button>
+        <button class="sub-link" onclick="showPanel('registrar-pago',null,'pagos')">Registrar pago</button>
+        <button class="sub-link" onclick="showPanel('historial-pagos',null,'pagos')">Historial de pagos</button>
+      </div>
+    </div>
+
+    <!-- Comunicación -->
+    <div>
+      <button class="nav-link" onclick="toggleMenu('comunicacion',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="flex:1;">Comunicación</span>
+        <span class="chevron" id="chev-comunicacion">›</span>
+      </button>
+      <div class="submenu" id="sub-comunicacion">
+        <button class="sub-link" onclick="showPanel('crear-notificacion',null,'comunicacion')">Crear notificación</button>
+        <button class="sub-link" onclick="showPanel('lista-anuncios',null,'comunicacion')">Lista de anuncios</button>
+      </div>
+    </div>
+
+    <!-- Incidencias -->
+    <div>
+      <button class="nav-link" onclick="toggleMenu('incidencias',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span style="flex:1;">Incidencias</span>
+        <span style="background:#e24b4a;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;margin-right:4px;">3</span>
+        <span class="chevron" id="chev-incidencias">›</span>
+      </button>
+      <div class="submenu" id="sub-incidencias">
+        <button class="sub-link" onclick="showPanel('lista-incidencias',null,'incidencias')">Lista de incidencias</button>
+        <button class="sub-link" onclick="showPanel('crear-incidencia',null,'incidencias')">Crear incidencia</button>
+      </div>
+    </div>
+
+    <!-- Reservas -->
+    <div>
+      <button class="nav-link" onclick="toggleMenu('reservas',this)">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span style="flex:1;">Reservas</span>
+        <span class="chevron" id="chev-reservas">›</span>
+      </button>
+      <div class="submenu" id="sub-reservas">
+        <button class="sub-link" onclick="showPanel('lista-reservas',null,'reservas')">Lista de reservas</button>
+        <button class="sub-link" onclick="showPanel('aprobar-reservas',null,'reservas')">Aprobar / Rechazar</button>
+      </div>
+    </div>
+
+    <!-- Reportes -->
+    <div style="padding:14px 20px 6px;font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.3);text-transform:uppercase;">Análisis</div>
+    <button class="nav-link" onclick="showPanel('reportes',this)">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="6" y1="20" x2="6" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Reportes y estadísticas</span>
+    </button>
+  </nav>
+
+  <!-- Footer -->
+  <div style="padding:16px 20px;border-top:0.5px solid rgba(255,255,255,0.08);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div class="avatar" style="width:34px;height:34px;font-size:11px;background:#1a6fc4;">AP</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#fff;">Admin Principal</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);">admin@edificio.com</div>
+      </div>
+    </div>
+    <button onclick="confirmLogout()" style="display:flex;align-items:center;gap:8px;padding:9px 0;font-size:13px;color:rgba(255,150,150,0.8);background:none;border:none;cursor:pointer;width:100%;transition:color 0.15s;" onmouseover="this.style.color='#ffaaaa'" onmouseout="this.style.color='rgba(255,150,150,0.8)'">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Cerrar sesión
+    </button>
+  </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="main-content" style="flex:1;">
+
+  <!-- Top bar -->
+  <header style="background:#fff;border-bottom:0.5px solid #dde5ef;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#0f2d52;" id="page-title">Dashboard principal</div>
+      <div style="font-size:11.5px;color:#8a9ab5;" id="page-breadcrumb">Inicio › Dashboard</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <!-- Bell notification dropdown -->
+      <div style="position:relative;" id="notif-wrapper">
+        <button id="bell-btn" onclick="toggleNotifDropdown()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#6b7c93;" onmouseover="this.style.background='#f0f4f9'" onmouseout="this.style.background='none'">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="notif-badge" style="display:none;position:absolute;top:3px;right:3px;min-width:16px;height:16px;background:#e24b4a;border-radius:50%;border:2px solid #fff;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 2px;">0</span>
+        </button>
+        <!-- Dropdown -->
+        <div id="notif-dropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:12px;border:0.5px solid #dde5ef;box-shadow:0 8px 32px rgba(15,45,82,0.16);z-index:200;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:0.5px solid #eef1f6;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:13.5px;font-weight:700;color:#0f2d52;">Notificaciones</div>
+            <button onclick="marcarTodasLeidas()" style="font-size:11.5px;color:#1a6fc4;background:none;border:none;cursor:pointer;font-weight:600;">Marcar todas leídas</button>
+          </div>
+          <div id="notif-list" style="max-height:320px;overflow-y:auto;">
+            <div style="padding:24px;text-align:center;color:#8a9ab5;font-size:13px;">Cargando...</div>
+          </div>
+          <div style="padding:10px 18px;border-top:0.5px solid #eef1f6;text-align:center;">
+            <button onclick="showPanel('crear-notificacion',null,'comunicacion');toggleNotifDropdown()" style="font-size:12.5px;color:#1a6fc4;background:none;border:none;cursor:pointer;font-weight:600;">+ Crear nueva notificación</button>
+          </div>
+        </div>
+      </div>
+      <!-- User avatar / profile trigger -->
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="openProfileModal()" title="Ver perfil">
+        <div class="avatar" style="background:#0f2d52;font-size:11px;" id="topbar-avatar">AP</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a2a3a;" id="topbar-name">Admin Principal</div>
+          <div style="font-size:11px;color:#8a9ab5;" id="topbar-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Panels container -->
+  <div style="padding:28px;">
+
+    <!-- ========== DASHBOARD ========== -->
+    <div id="panel-dashboard" class="panel active">
+      <div style="margin-bottom:24px;">
+        <div style="font-size:22px;font-weight:700;color:#0f2d52;">Bienvenido, Admin 👋</div>
+        <div style="font-size:14px;color:#8a9ab5;margin-top:4px;">Resumen general del edificio · Actualizado hoy</div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+        <div class="stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:#8a9ab5;text-transform:uppercase;letter-spacing:0.05em;">Total residentes</div>
+            <div style="width:38px;height:38px;background:#e6f1fb;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#1a6fc4" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#1a6fc4" stroke-width="1.8"/></svg>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;">148</div>
+          <div style="font-size:12px;color:#0d7d45;margin-top:4px;">▲ +3 este mes</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:#8a9ab5;text-transform:uppercase;letter-spacing:0.05em;">Pagos pendientes</div>
+            <div style="width:38px;height:38px;background:#fff8e6;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" stroke="#b07800" stroke-width="1.8"/><path d="M1 10h22" stroke="#b07800" stroke-width="1.8"/></svg>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;">12</div>
+          <div style="font-size:12px;color:#b07800;margin-top:4px;">⚠ Vencen esta semana</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:#8a9ab5;text-transform:uppercase;letter-spacing:0.05em;">Incidencias activas</div>
+            <div style="width:38px;height:38px;background:#fff0f0;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;">3</div>
+          <div style="font-size:12px;color:#c0392b;margin-top:4px;">● 1 urgente</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:#8a9ab5;text-transform:uppercase;letter-spacing:0.05em;">Reservas hoy</div>
+            <div style="width:38px;height:38px;background:#e6f7ee;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#0d7d45" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#0d7d45" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;">7</div>
+          <div style="font-size:12px;color:#0d7d45;margin-top:4px;">Salón · Piscina · Gym</div>
+        </div>
+      </div>
+
+      <!-- Bottom section -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+        <!-- Recent activity -->
+        <div class="stat-card">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Actividad reciente</div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#e6f1fb;">💳</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Pago registrado · Apto 4B</div>
+              <div style="font-size:12px;color:#8a9ab5;">Mantenimiento mensual · RD$4,500 · hace 20 min</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#fff0f0;">⚠️</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Nueva incidencia · Área común</div>
+              <div style="font-size:12px;color:#8a9ab5;">Fuga de agua en pasillo 2do piso · hace 1h</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#e6f7ee;">📅</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Reserva aprobada · Salón</div>
+              <div style="font-size:12px;color:#8a9ab5;">Res. García · 28 abr · 18:00–22:00 · hace 3h</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#f0f4f9;">👤</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Nuevo residente registrado</div>
+              <div style="font-size:12px;color:#8a9ab5;">Carlos Mendoza · Apto 7C · hace 5h</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="stat-card">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Recaudación del mes</div>
+            <div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$284,500</div>
+            <div style="font-size:12px;color:#8a9ab5;margin-bottom:12px;">Meta: RD$320,000</div>
+            <div class="progress"><div class="progress-fill" style="width:89%;"></div></div>
+            <div style="font-size:12px;color:#0d7d45;margin-top:8px;">89% alcanzado</div>
+          </div>
+          <div class="stat-card">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Ocupación</div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#eef1f6" stroke-width="10"/>
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#3b9eff" stroke-width="10" stroke-dasharray="169 20" stroke-dashoffset="25" stroke-linecap="round" class="donut-ring"/>
+                <text x="40" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="#0f2d52">90%</text>
+              </svg>
+              <div>
+                <div style="font-size:13px;color:#1a2a3a;margin-bottom:6px;"><span style="display:inline-block;width:10px;height:10px;background:#3b9eff;border-radius:2px;margin-right:6px;"></span>Ocupados: 134</div>
+                <div style="font-size:13px;color:#1a2a3a;"><span style="display:inline-block;width:10px;height:10px;background:#eef1f6;border-radius:2px;margin-right:6px;"></span>Vacíos: 14</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LISTA RESIDENTES ========== -->
+    <div id="panel-lista-residentes" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Residentes</div>
+          <div style="font-size:13px;color:#8a9ab5;margin-top:2px;">148 residentes registrados</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" placeholder="🔍  Buscar residente..." class="form-input" style="width:240px;" oninput="filterTable(this.value,'res-table')"/>
+          <button class="btn-primary" onclick="showPanel('crear-residente',null,'residentes')">+ Nuevo residente</button>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
+        <table class="data-table" id="res-table">
+          <thead><tr>
+            <th>Residente</th><th>Apartamento</th><th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="res-tbody">
+            <tr><td colspan="6" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando residentes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== CREAR RESIDENTE ========== -->
+    <div id="panel-crear-residente" class="panel">
+      <div style="margin-bottom:24px;">
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Crear / Editar Residente</div>
+        <div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Complete los datos del residente</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;padding-bottom:14px;border-bottom:0.5px solid #eef1f6;">Información personal</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group"><label class="form-label">Nombre *</label><input class="form-input" type="text" id="res-nombre" placeholder="Ej: Carlos"/></div>
+            <div class="form-group"><label class="form-label">Apellido *</label><input class="form-input" type="text" id="res-apellido" placeholder="Ej: Mendoza"/></div>
+            <div class="form-group"><label class="form-label">Cédula / Pasaporte *</label><input class="form-input" type="text" id="res-cedula" placeholder="001-000000-0"/></div>
+            <div class="form-group"><label class="form-label">Fecha de nacimiento</label><input class="form-input" type="date" id="res-fnac"/></div>
+            <div class="form-group"><label class="form-label">Teléfono *</label><input class="form-input" type="tel" id="res-telefono" placeholder="829-000-0000"/></div>
+            <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="res-correo" placeholder="correo@ejemplo.com"/></div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin:20px 0 16px;padding-top:16px;border-top:0.5px solid #eef1f6;">Datos del apartamento</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div class="form-group"><label class="form-label">Apartamento *</label><input class="form-input" type="text" id="res-apto" placeholder="Ej: 4B"/></div>
+            <div class="form-group"><label class="form-label">Piso</label><input class="form-input" type="number" id="res-piso" placeholder="4"/></div>
+            <div class="form-group"><label class="form-label">Estado</label>
+              <select class="form-input form-select" id="res-estado"><option>Activo</option><option>Inactivo</option><option>Moroso</option></select>
+            </div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Fecha de ingreso *</label><input class="form-input" type="date" id="res-fecha-ingreso"/></div>
+            <div class="form-group"><label class="form-label">Tipo de contrato</label>
+              <select class="form-input form-select" id="res-contrato"><option>Propietario</option><option>Arrendatario</option><option>Temporal</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Notas adicionales</label><textarea class="form-input" rows="3" id="res-notas" placeholder="Información adicional relevante..."></textarea></div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+            <button class="btn-secondary" onclick="showPanel('lista-residentes',null,'residentes')">Cancelar</button>
+            <button class="btn-primary" onclick="submitResidente()">Guardar residente</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Foto del residente</div>
+            <div style="border:2px dashed #dde5ef;border-radius:10px;padding:28px;text-align:center;cursor:pointer;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="this.style.borderColor='#dde5ef'">
+              <div style="font-size:28px;margin-bottom:8px;">📷</div>
+              <div style="font-size:13px;color:#6b7c93;">Arrastra o haz clic para subir</div>
+              <div style="font-size:11.5px;color:#aab4c2;margin-top:4px;">PNG, JPG máx. 5MB</div>
+            </div>
+          </div>
+          <div style="background:#e6f1fb;border-radius:12px;padding:18px;">
+            <div style="font-size:13px;font-weight:700;color:#1a3a6a;margin-bottom:10px;">📋 Checklist de ingreso</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1a3a6a;margin-bottom:8px;cursor:pointer;"><input type="checkbox" checked/> Cédula verificada</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1a3a6a;margin-bottom:8px;cursor:pointer;"><input type="checkbox" checked/> Contrato firmado</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1a3a6a;margin-bottom:8px;cursor:pointer;"><input type="checkbox"/> Depósito recibido</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1a3a6a;cursor:pointer;"><input type="checkbox"/> Acceso entregado</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PERFIL RESIDENTE ========== -->
+    <div id="panel-perfil-residente" class="panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <button class="btn-secondary btn-sm" onclick="showPanel('lista-residentes',null,'residentes')">← Volver</button>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Perfil del Residente</div>
+      </div>
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;text-align:center;">
+            <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#1a6fc4;">CM</div>
+            <div style="font-size:16px;font-weight:700;color:#0f2d52;">Carlos Mendoza</div>
+            <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;">Apartamento 7C · Piso 7</div>
+            <span class="badge badge-green">Activo</span>
+            <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+              <button class="btn-secondary btn-sm" onclick="showPanel('crear-residente',null,'residentes')">Editar</button>
+              <button class="btn-danger btn-sm" onclick="confirmAction('¿Desactivar residente?','Esta acción cambiará el estado del residente a Inactivo.')">Desactivar</button>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Información de contacto</div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">📞 829-555-1001</div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">✉️ c.mendoza@mail.com</div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">🪪 001-1234567-8</div>
+            <div style="font-size:13px;color:#4a5a72;">📅 Desde enero 2023</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Historial de pagos</div>
+            <table class="data-table">
+              <thead><tr><th>Mes</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <tbody>
+                <tr><td>Abril 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>15/04/2026</td></tr>
+                <tr><td>Marzo 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>10/03/2026</td></tr>
+                <tr><td>Febrero 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>08/02/2026</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Reservas recientes</div>
+            <div style="font-size:13.5px;color:#4a5a72;padding:10px 0;border-bottom:0.5px solid #eef1f6;">📅 Salón social · 28 abr 2026 · 18:00–22:00 · <span class="badge badge-green">Aprobada</span></div>
+            <div style="font-size:13.5px;color:#4a5a72;padding:10px 0;">🏊 Piscina · 20 abr 2026 · 10:00–12:00 · <span class="badge badge-green">Aprobada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LISTA PAGOS ========== -->
+    <div id="panel-lista-pagos" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Abril 2026</div></div>
+        <div style="display:flex;gap:10px;">
+          <select class="form-input form-select" style="width:180px;"><option>Todos los estados</option><option>Pagado</option><option>Pendiente</option><option>Vencido</option></select>
+          <button class="btn-primary" onclick="showPanel('registrar-pago',null,'pagos')">+ Registrar pago</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">RECAUDADO</div><div style="font-size:24px;font-weight:700;color:#0f2d52;">RD$284,500</div><div style="font-size:12px;color:#0d7d45;margin-top:4px;">89% del total</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">PENDIENTE</div><div style="font-size:24px;font-weight:700;color:#b07800;">RD$35,500</div><div style="font-size:12px;color:#b07800;margin-top:4px;">12 pagos</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">VENCIDOS</div><div style="font-size:24px;font-weight:700;color:#c0392b;">RD$9,000</div><div style="font-size:12px;color:#c0392b;margin-top:4px;">2 pagos</div></div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
+        <table class="data-table">
+          <thead><tr><th>Residente</th><th>Apto.</th><th>Concepto</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody>
+            <tr><td><span style="font-weight:600;">Carlos Mendoza</span></td><td>7C</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-green">Pagado</span></td><td><button class="btn-secondary btn-sm">Ver recibo</button></td></tr>
+            <tr><td><span style="font-weight:600;">María García</span></td><td>4B</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-green">Pagado</span></td><td><button class="btn-secondary btn-sm">Ver recibo</button></td></tr>
+            <tr><td><span style="font-weight:600;">José Rodríguez</span></td><td>2A</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showToast('success','Recordatorio enviado','Se notificó al residente por correo.')">Notificar</button></td></tr>
+            <tr><td><span style="font-weight:600;">Laura Díaz</span></td><td>8A</td><td>Mantenimiento</td><td>RD$4,500</td><td>31/03/2026</td><td><span class="badge badge-red">Vencido</span></td><td><button class="btn-danger btn-sm" onclick="showToast('success','Cobro enviado','Se envió aviso de cobro al residente.')">Cobrar</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== REGISTRAR PAGO ========== -->
+    <div id="panel-registrar-pago" class="panel">
+      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Registrar Pago</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Complete los datos del pago</div></div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Residente *</label><select class="form-input form-select"><option>Seleccionar residente...</option><option>Carlos Mendoza – Apto 7C</option><option>María García – Apto 4B</option><option>José Rodríguez – Apto 2A</option></select></div>
+            <div class="form-group"><label class="form-label">Concepto *</label><select class="form-input form-select"><option>Mantenimiento mensual</option><option>Agua</option><option>Electricidad áreas comunes</option><option>Multa</option><option>Otro</option></select></div>
+            <div class="form-group"><label class="form-label">Monto *</label><input class="form-input" type="number" placeholder="0.00" step="0.01"/></div>
+            <div class="form-group"><label class="form-label">Fecha de pago *</label><input class="form-input" type="date"/></div>
+            <div class="form-group"><label class="form-label">Método de pago</label><select class="form-input form-select"><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Cheque</option></select></div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Número de referencia</label><input class="form-input" type="text" placeholder="Ej: TRF-20260426-001"/></div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Notas</label><textarea class="form-input" rows="3" placeholder="Observaciones adicionales..."></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+            <button class="btn-secondary" onclick="showPanel('lista-pagos',null,'pagos')">Cancelar</button>
+            <button class="btn-primary" onclick="showToast('success','Pago registrado','El pago fue guardado y el recibo generado.')">Registrar pago</button>
+          </div>
+        </div>
+        <div style="background:#f0f4f9;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Vista previa del recibo</div>
+          <div style="background:#fff;border-radius:10px;padding:20px;border:0.5px solid #dde5ef;">
+            <div style="text-align:center;padding-bottom:14px;border-bottom:0.5px solid #eef1f6;margin-bottom:14px;">
+              <div style="font-size:15px;font-weight:700;color:#0f2d52;">Edificio Residencial</div>
+              <div style="font-size:11px;color:#8a9ab5;">NIT: 1-23-45678-9</div>
+            </div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Residente:</strong> –</div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Concepto:</strong> –</div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Fecha:</strong> –</div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:16px;"><strong>Método:</strong> –</div>
+            <div style="display:flex;justify-content:space-between;padding-top:14px;border-top:0.5px solid #eef1f6;">
+              <span style="font-size:13px;font-weight:700;color:#0f2d52;">Total</span>
+              <span style="font-size:18px;font-weight:700;color:#0f2d52;">RD$0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== HISTORIAL PAGOS ========== -->
+    <div id="panel-historial-pagos" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Historial de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Todos los registros históricos</div></div>
+        <div style="display:flex;gap:10px;">
+          <input type="month" class="form-input" style="width:160px;" value="2026-04"/>
+          <button class="btn-secondary" onclick="showToast('success','Exportado','El historial fue exportado en Excel.')">⬇ Exportar</button>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Residente</th><th>Apto.</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#8a9ab5;">#1045</td><td>Carlos Mendoza</td><td>7C</td><td>Mantenimiento</td><td>RD$4,500</td><td>Transferencia</td><td>15/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
+            <tr><td style="color:#8a9ab5;">#1044</td><td>María García</td><td>4B</td><td>Mantenimiento</td><td>RD$4,500</td><td>Efectivo</td><td>14/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
+            <tr><td style="color:#8a9ab5;">#1043</td><td>Ana López</td><td>10D</td><td>Agua</td><td>RD$850</td><td>Transferencia</td><td>12/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
+            <tr><td style="color:#8a9ab5;">#1042</td><td>Pedro Ramírez</td><td>5F</td><td>Mantenimiento</td><td>RD$4,500</td><td>Tarjeta</td><td>10/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
+            <tr><td style="color:#8a9ab5;">#1041</td><td>José Rodríguez</td><td>2A</td><td>Mantenimiento</td><td>RD$4,500</td><td>–</td><td>–</td><td><span class="badge badge-yellow">Pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== CREAR NOTIFICACION ========== -->
+    <div id="panel-crear-notificacion" class="panel">
+      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Crear Notificación</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Envía un mensaje a los residentes</div></div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
+          <div class="form-group"><label class="form-label">Título del anuncio *</label><input class="form-input" type="text" id="notif-titulo" placeholder="Ej: Corte de agua programado"/></div>
+          <div class="form-group"><label class="form-label">Tipo de notificación</label>
+            <select class="form-input form-select" id="notif-tipo"><option value="general">📢 Anuncio general</option><option value="urgente">⚠️ Alerta urgente</option><option value="mantenimiento">🔧 Mantenimiento</option><option value="evento">📅 Evento</option><option value="cobro">💳 Cobro</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Mensaje *</label><textarea class="form-input" rows="6" id="notif-mensaje" placeholder="Escriba el contenido del anuncio aquí..." oninput="updateNotifPreview()"></textarea></div>
+          <div class="form-group"><label class="form-label">Canales de envío</label>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#4a5a72;cursor:pointer;"><input type="checkbox" checked/> 📱 App</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#4a5a72;cursor:pointer;"><input type="checkbox" checked/> ✉️ Correo</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#4a5a72;cursor:pointer;"><input type="checkbox"/> 📲 WhatsApp</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#4a5a72;cursor:pointer;"><input type="checkbox"/> 💬 SMS</label>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+            <button class="btn-secondary" id="notif-draft-btn">Guardar borrador</button>
+            <button class="btn-primary" onclick="submitNotificacion()">📤 Enviar ahora</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Vista previa</div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:16px;border-left:4px solid #3b9eff;">
+              <div style="font-size:13.5px;font-weight:700;color:#0f2d52;">📢 Título del anuncio</div>
+              <div style="font-size:12.5px;color:#4a5a72;margin-top:6px;">El cuerpo del mensaje aparecerá aquí tal como lo verán los residentes.</div>
+              <div style="font-size:11px;color:#8a9ab5;margin-top:10px;">Administración · Ahora</div>
+            </div>
+          </div>
+          <div style="background:#fff8e6;border-radius:12px;padding:18px;border:0.5px solid #ffe99a;">
+            <div style="font-size:13px;font-weight:700;color:#7a5500;margin-bottom:8px;">⚠️ Antes de enviar</div>
+            <div style="font-size:12.5px;color:#7a5500;">Verifica que el mensaje sea claro y no contenga errores. Una vez enviado no puede retirarse.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LISTA ANUNCIOS ========== -->
+    <div id="panel-lista-anuncios" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Anuncios</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Historial de comunicaciones</div></div>
+        <button class="btn-primary" onclick="showPanel('crear-notificacion',null,'comunicacion')">+ Nuevo anuncio</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;border-left:4px solid #e24b4a;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="badge badge-red">Alerta urgente</span><div style="font-size:14px;font-weight:700;color:#0f2d52;">Corte de electricidad zona norte</div></div>
+            <div style="font-size:12px;color:#8a9ab5;">Hoy 09:30 AM</div>
+          </div>
+          <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">Se informa que habrá corte de electricidad en la zona norte del edificio de 10:00 AM a 2:00 PM por trabajos de mantenimiento.</div>
+          <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:#8a9ab5;"><span>📩 148 enviados</span><span>👁 132 leídos (89%)</span><span>Canales: App · Correo</span></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;border-left:4px solid #3b9eff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="badge badge-blue">Evento</span><div style="font-size:14px;font-weight:700;color:#0f2d52;">Reunión de propietarios – Mayo 2026</div></div>
+            <div style="font-size:12px;color:#8a9ab5;">Ayer 03:15 PM</div>
+          </div>
+          <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">Se convoca a todos los propietarios a la asamblea mensual el próximo 5 de mayo a las 7:00 PM en el salón social.</div>
+          <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:#8a9ab5;"><span>📩 148 enviados</span><span>👁 118 leídos (80%)</span><span>Canales: App · Correo · WhatsApp</span></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;border-left:4px solid #0d7d45;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="badge badge-green">General</span><div style="font-size:14px;font-weight:700;color:#0f2d52;">Normas de uso de la piscina – Temporada 2026</div></div>
+            <div style="font-size:12px;color:#8a9ab5;">20 abr 2026</div>
+          </div>
+          <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">Recordamos a todos los residentes las normas de uso de la piscina durante la temporada de verano. Horario: 8:00 AM – 8:00 PM.</div>
+          <div style="display:flex;align-items:center;gap:16px;font-size:12px;color:#8a9ab5;"><span>📩 148 enviados</span><span>👁 140 leídos (95%)</span><span>Canales: App · Correo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== CREAR INCIDENCIA ========== -->
+    <div id="panel-crear-incidencia" class="panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <button class="btn-secondary btn-sm" onclick="showPanel('lista-incidencias',null,'incidencias')">← Volver</button>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Crear Incidencia</div>
+      </div>
+      <div style="max-width:680px;background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
+        <div class="form-group"><label class="form-label">Título *</label><input class="form-input" type="text" id="inc-titulo" placeholder="Ej: Fuga de agua en pasillo piso 3"/></div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-input" rows="4" id="inc-descripcion" placeholder="Describe el problema con detalle..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label class="form-label">Ubicación</label><input class="form-input" type="text" id="inc-ubicacion" placeholder="Ej: Piso 3, pasillo norte"/></div>
+          <div class="form-group"><label class="form-label">Prioridad</label>
+            <select class="form-input form-select" id="inc-prioridad"><option value="Normal">Normal</option><option value="Alta">Alta</option><option value="Baja">Baja</option></select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn-secondary" onclick="showPanel('lista-incidencias',null,'incidencias')">Cancelar</button>
+          <button class="btn-primary" onclick="submitIncidencia()">🚨 Crear incidencia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LISTA INCIDENCIAS ========== -->
+    <div id="panel-lista-incidencias" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Incidencias</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Reportadas y en seguimiento</div></div>
+        <div style="display:flex;gap:10px;">
+          <select class="form-input form-select" style="width:160px;"><option>Todas</option><option>Urgente</option><option>Abierta</option><option>En proceso</option><option>Resuelta</option></select>
+          <button class="btn-primary" onclick="showPanel('crear-incidencia',null,'incidencias')">+ Crear incidencia</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:20px;cursor:pointer;" onclick="showPanel('detalle-incidencia',null,'incidencias')" onmouseover="this.style.boxShadow='0 4px 16px rgba(192,57,43,0.1)'" onmouseout="this.style.boxShadow='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:42px;height:42px;background:#fff0f0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🚨</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div style="font-size:14px;font-weight:700;color:#0f2d52;">Fuga de agua – Pasillo 2do piso</div><span class="badge badge-red">Urgente</span></div>
+                <div style="font-size:12.5px;color:#8a9ab5;">Reportado por: María García · Apto 4B · hace 2 horas</div>
+              </div>
+            </div>
+            <button class="btn-secondary btn-sm" onclick="event.stopPropagation();showPanel('detalle-incidencia',null,'incidencias')">Ver detalle →</button>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;cursor:pointer;" onclick="showPanel('detalle-incidencia',null,'incidencias')" onmouseover="this.style.boxShadow='0 4px 16px rgba(15,45,82,0.07)'" onmouseout="this.style.boxShadow='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:42px;height:42px;background:#fff8e6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🔧</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div style="font-size:14px;font-weight:700;color:#0f2d52;">Ascensor fuera de servicio</div><span class="badge badge-yellow">En proceso</span></div>
+                <div style="font-size:12.5px;color:#8a9ab5;">Reportado por: Admin · hace 1 día · Técnico asignado</div>
+              </div>
+            </div>
+            <button class="btn-secondary btn-sm" onclick="event.stopPropagation();">Ver detalle →</button>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(15,45,82,0.07)'" onmouseout="this.style.boxShadow='none'">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:42px;height:42px;background:#e6f7ee;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">💡</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><div style="font-size:14px;font-weight:700;color:#0f2d52;">Luminaria quemada – Estacionamiento</div><span class="badge badge-green">Resuelta</span></div>
+                <div style="font-size:12.5px;color:#8a9ab5;">Reportado por: Carlos Mendoza · Apto 7C · hace 3 días</div>
+              </div>
+            </div>
+            <button class="btn-secondary btn-sm">Ver detalle →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== DETALLE INCIDENCIA ========== -->
+    <div id="panel-detalle-incidencia" class="panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <button class="btn-secondary btn-sm" onclick="showPanel('lista-incidencias',null,'incidencias')">← Volver</button>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Detalle de Incidencia #INC-042</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div style="font-size:16px;font-weight:700;color:#c0392b;">🚨 Fuga de agua – Pasillo 2do piso</div>
+              <span class="badge badge-red">Urgente</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13.5px;color:#4a5a72;">
+              <div><strong style="color:#1a2a3a;">Reportado por:</strong> María García · Apto 4B</div>
+              <div><strong style="color:#1a2a3a;">Fecha:</strong> 26/04/2026 · 14:32</div>
+              <div><strong style="color:#1a2a3a;">Ubicación:</strong> Pasillo 2do piso, ala norte</div>
+              <div><strong style="color:#1a2a3a;">Prioridad:</strong> Alta</div>
+            </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid #eef1f6;font-size:13.5px;color:#4a5a72;">
+              <strong style="color:#1a2a3a;display:block;margin-bottom:6px;">Descripción:</strong>
+              Se detectó fuga de agua en el pasillo del 2do piso, ala norte. El agua proviene aparentemente de la tubería del apartamento 2C. Ya ha mojado parte del corredor y puede afectar el apartamento inferior.
+            </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid #eef1f6;">
+              <strong style="font-size:13px;color:#1a2a3a;display:block;margin-bottom:10px;">Actualizar estado:</strong>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-secondary btn-sm" onclick="cambiarEstadoIncidencia('Abierta',this)">Abierta</button>
+                <button class="btn-accent btn-sm" onclick="cambiarEstadoIncidencia('En proceso',this)">En proceso</button>
+                <button class="btn-success btn-sm" onclick="cambiarEstadoIncidencia('Resuelta',this)">Resuelta</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
+            <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Seguimiento y comentarios</div>
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div class="avatar" style="width:32px;height:32px;font-size:10px;background:#1a6fc4;flex-shrink:0;">AP</div>
+                <div style="background:#f0f4f9;border-radius:10px;padding:12px;flex:1;">
+                  <div style="font-size:12px;font-weight:600;color:#1a2a3a;margin-bottom:4px;">Admin Principal · 14:45</div>
+                  <div style="font-size:13px;color:#4a5a72;">Se contactó al plomero de guardia. Estará en el edificio en 30 minutos.</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <input class="form-input" type="text" placeholder="Añadir comentario..." style="flex:1;"/>
+              <button class="btn-primary" onclick="showToast('success','Comentario añadido','El comentario fue registrado.')">Enviar</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Asignar técnico</div>
+            <select class="form-input form-select" style="margin-bottom:10px;"><option>Seleccionar...</option><option>Luis Pérez – Plomería</option><option>Juan Torres – Electricidad</option><option>Pedro Gómez – General</option></select>
+            <button class="btn-primary" style="width:100%;" onclick="showToast('success','Técnico asignado','Luis Pérez fue notificado.')">Asignar</button>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Línea de tiempo</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:8px 0;border-bottom:0.5px solid #eef1f6;">🔴 <strong>14:32</strong> – Incidencia reportada</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:8px 0;border-bottom:0.5px solid #eef1f6;">📋 <strong>14:35</strong> – Revisada por admin</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:8px 0;">📞 <strong>14:45</strong> – Técnico contactado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== LISTA RESERVAS ========== -->
+    <div id="panel-lista-reservas" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Reservas</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Áreas comunes disponibles</div></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="date" class="form-input" style="width:180px;" value="2026-04-26"/>
+          <select class="form-input form-select" style="width:160px;"><option>Todas las áreas</option><option>Salón social</option><option>Piscina</option><option>Gimnasio</option><option>BBQ</option></select>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;margin-bottom:20px;">
+        <table class="data-table">
+          <thead><tr><th>Residente</th><th>Área</th><th>Fecha</th><th>Horario</th><th>Personas</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody>
+            <tr><td><span style="font-weight:600;">María García</span></td><td>Salón social</td><td>28/04/2026</td><td>18:00 – 22:00</td><td>30</td><td><span class="badge badge-green">Aprobada</span></td><td><button class="btn-secondary btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Gestionar</button></td></tr>
+            <tr><td><span style="font-weight:600;">Carlos Mendoza</span></td><td>Piscina</td><td>27/04/2026</td><td>10:00 – 12:00</td><td>4</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Revisar</button></td></tr>
+            <tr><td><span style="font-weight:600;">Ana López</span></td><td>BBQ</td><td>30/04/2026</td><td>14:00 – 18:00</td><td>15</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Revisar</button></td></tr>
+            <tr><td><span style="font-weight:600;">Pedro Ramírez</span></td><td>Gimnasio</td><td>26/04/2026</td><td>07:00 – 09:00</td><td>1</td><td><span class="badge badge-red">Rechazada</span></td><td><button class="btn-secondary btn-sm">Ver motivo</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== APROBAR RESERVAS ========== -->
+    <div id="panel-aprobar-reservas" class="panel">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <button class="btn-secondary btn-sm" onclick="showPanel('lista-reservas',null,'reservas')">← Volver</button>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Gestión de Reserva #RES-028</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
+          <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Detalle de la solicitud</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Residente</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">Carlos Mendoza</div><div style="font-size:12.5px;color:#4a5a72;">Apto 7C</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Área solicitada</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">Piscina</div><div style="font-size:12.5px;color:#4a5a72;">Aforo: 20 personas</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Fecha y hora</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">27 de abril 2026</div><div style="font-size:12.5px;color:#4a5a72;">10:00 AM – 12:00 PM</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">N° de personas</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">4 personas</div><div style="font-size:12.5px;color:#0d7d45;">Dentro del aforo</div></div>
+          </div>
+          <div class="form-group"><label class="form-label">Notas del residente</label><div style="background:#f0f4f9;border-radius:8px;padding:12px;font-size:13.5px;color:#4a5a72;">Uso familiar de la piscina con niños. No habrá música ni eventos especiales.</div></div>
+          <div class="form-group"><label class="form-label">Comentario del administrador (opcional)</label><textarea class="form-input" rows="3" placeholder="Añade un comentario o motivo de rechazo..."></textarea></div>
+          <div style="display:flex;gap:12px;margin-top:8px;">
+            <button class="btn-danger" style="flex:1;" onclick="showToast('error','Reserva rechazada','Se notificó al residente con el motivo.')">✕ Rechazar</button>
+            <button class="btn-success" style="flex:2;font-size:14px;padding:11px;" onclick="showToast('success','Reserva aprobada','El residente recibió la confirmación.')">✓ Aprobar reserva</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:12px;">Disponibilidad del área</div>
+            <div style="font-size:12.5px;color:#0d7d45;margin-bottom:8px;">✅ Sin conflictos en ese horario</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:6px 0;border-bottom:0.5px solid #eef1f6;">08:00–10:00 · Libre</div>
+            <div style="font-size:12.5px;color:#1a6fc4;padding:6px 0;border-bottom:0.5px solid #eef1f6;font-weight:600;">10:00–12:00 · Esta solicitud</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:6px 0;border-bottom:0.5px solid #eef1f6;">12:00–14:00 · Libre</div>
+            <div style="font-size:12.5px;color:#4a5a72;padding:6px 0;">14:00–16:00 · Libre</div>
+          </div>
+          <div style="background:#e6f7ee;border-radius:12px;padding:18px;border:0.5px solid #b2e8cd;">
+            <div style="font-size:13px;font-weight:700;color:#0a5c30;margin-bottom:6px;">✅ Historial del residente</div>
+            <div style="font-size:12.5px;color:#0a5c30;">3 reservas anteriores · Sin incidentes reportados</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== REPORTES ========== -->
+    <div id="panel-reportes" class="panel">
+      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Reportes y Estadísticas</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Resumen general del edificio · Abril 2026</div></div>
+
+      <!-- Top KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div class="stat-card"><div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Recaudación abr.</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$284,500</div><div style="font-size:12px;color:#0d7d45;">▲ +5.2% vs mar.</div></div>
+        <div class="stat-card"><div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Tasa de pago</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">89%</div><div style="font-size:12px;color:#0d7d45;">▲ +3% vs mar.</div></div>
+        <div class="stat-card"><div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Incidencias resueltas</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">94%</div><div style="font-size:12px;color:#0d7d45;">▲ Excelente</div></div>
+        <div class="stat-card"><div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Satisfacción</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">4.7/5</div><div style="font-size:12px;color:#0d7d45;">▲ +0.2 vs mar.</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <!-- Bar chart recaudación -->
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Recaudación mensual (RD$)</div>
+          <div style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:10px;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#8a9ab5;">241k</div>
+              <div style="background:#dde5ef;border-radius:4px 4px 0 0;width:100%;height:75px;"></div>
+              <div style="font-size:10.5px;color:#6b7c93;">Nov</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#8a9ab5;">258k</div>
+              <div style="background:#dde5ef;border-radius:4px 4px 0 0;width:100%;height:85px;"></div>
+              <div style="font-size:10.5px;color:#6b7c93;">Dic</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#8a9ab5;">262k</div>
+              <div style="background:#b5d4f4;border-radius:4px 4px 0 0;width:100%;height:87px;"></div>
+              <div style="font-size:10.5px;color:#6b7c93;">Ene</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#8a9ab5;">255k</div>
+              <div style="background:#b5d4f4;border-radius:4px 4px 0 0;width:100%;height:82px;"></div>
+              <div style="font-size:10.5px;color:#6b7c93;">Feb</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#8a9ab5;">270k</div>
+              <div style="background:#85b7eb;border-radius:4px 4px 0 0;width:100%;height:92px;"></div>
+              <div style="font-size:10.5px;color:#6b7c93;">Mar</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:#3b9eff;font-weight:700;">284k</div>
+              <div style="background:#3b9eff;border-radius:4px 4px 0 0;width:100%;height:108px;"></div>
+              <div style="font-size:10.5px;color:#1a6fc4;font-weight:700;">Abr</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Incidencias por tipo -->
+        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Incidencias por categoría</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#4a5a72;">Plomería</span><span style="font-weight:600;color:#0f2d52;">38%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:38%;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#4a5a72;">Electricidad</span><span style="font-weight:600;color:#0f2d52;">24%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:24%;background:#0d7d45;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#4a5a72;">Ascensores</span><span style="font-weight:600;color:#0f2d52;">18%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:18%;background:#b07800;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#4a5a72;">Áreas comunes</span><span style="font-weight:600;color:#0f2d52;">13%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:13%;background:#534ab7;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:#4a5a72;">Otros</span><span style="font-weight:600;color:#0f2d52;">7%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:7%;background:#8a9ab5;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla resumen -->
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
+        <div style="padding:18px 20px;border-bottom:0.5px solid #eef1f6;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;">Resumen ejecutivo · Abril 2026</div>
+          <button class="btn-secondary btn-sm" onclick="showToast('success','Reporte exportado','El PDF fue generado correctamente.')">⬇ Descargar PDF</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Indicador</th><th>Actual</th><th>Mes anterior</th><th>Variación</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>Recaudación total</td><td>RD$284,500</td><td>RD$270,000</td><td style="color:#0d7d45;">+5.4%</td><td><span class="badge badge-green">Excelente</span></td></tr>
+            <tr><td>Residentes activos</td><td>134</td><td>131</td><td style="color:#0d7d45;">+2.3%</td><td><span class="badge badge-green">Normal</span></td></tr>
+            <tr><td>Incidencias reportadas</td><td>8</td><td>12</td><td style="color:#0d7d45;">-33%</td><td><span class="badge badge-green">Mejoró</span></td></tr>
+            <tr><td>Reservas procesadas</td><td>22</td><td>18</td><td style="color:#0d7d45;">+22%</td><td><span class="badge badge-blue">Alto</span></td></tr>
+            <tr><td>Morosos</td><td>2</td><td>4</td><td style="color:#0d7d45;">-50%</td><td><span class="badge badge-green">Mejoró</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /padding -->
+</div><!-- /main-content -->
+</div><!-- /flex -->
+
+<!-- ===== PROFILE MODAL ===== -->
+<div class="modal-overlay" id="profile-modal-overlay">
+  <div class="modal" style="width:420px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:700;color:#0f2d52;">Mi Perfil</div>
+      <button onclick="closeProfileModal()" style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#0f2d52;" id="profile-avatar">AP</div>
+      <div style="font-size:18px;font-weight:700;color:#0f2d52;" id="profile-nombre">Admin Principal</div>
+      <div style="font-size:13px;color:#8a9ab5;" id="profile-email">admin@edificio.com</div>
+    </div>
+    <div style="background:#f0f4f9;border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid #dde5ef;">
+        <span style="font-size:13px;color:#6b7c93;">Rol</span>
+        <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-rol">Administrador</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;">
+        <span style="font-size:13px;color:#6b7c93;">Miembro desde</span>
+        <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-fecha">—</span>
+      </div>
+    </div>
+    <button onclick="doLogout()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;background:#fff0f0;color:#c0392b;border:1px solid #fad0d0;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Cerrar sesión
+    </button>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
