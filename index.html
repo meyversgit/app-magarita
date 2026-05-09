@@ -1,0 +1,584 @@
+
+<html lang="es">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>CondoManager</title>  
+    <link rel="stylesheet" href="style.css">  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">  
+</head>  
+<body>  <div class="container">  <!-- SIDEBAR -->  
+<aside class="sidebar">  
+    <div>  
+        <div class="logo">CondoManager</div>  
+
+        <nav>  
+            <button class="menu-btn active" onclick="showSection('inicio')">  
+                <i class="fa-solid fa-house"></i> Inicio  
+            </button>  
+
+            <button class="menu-btn" onclick="showSection('pagos')">  
+                <i class="fa-solid fa-credit-card"></i> Pagos  
+            </button>  
+
+            <button class="menu-btn" onclick="showSection('reservas')">  
+                <i class="fa-solid fa-calendar"></i> Reservas  
+            </button>  
+
+            <button class="menu-btn" onclick="showSection('notificaciones')">  
+                <i class="fa-solid fa-bell"></i> Notificaciones  
+            </button>  
+
+            <button class="menu-btn" onclick="showSection('incidencias')">  
+                <i class="fa-solid fa-triangle-exclamation"></i> Incidencias  
+            </button>  
+
+            <button class="menu-btn" onclick="showSection('perfil')">  
+                <i class="fa-solid fa-user"></i> Mi perfil  
+            </button>  
+        </nav>  
+    </div>  
+
+    <button class="logout-btn">  
+        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión  
+    </button>  
+</aside>  
+
+
+<!-- CONTENIDO -->  
+<main class="content">  
+
+    <!-- HEADER -->  
+    <div class="topbar">  
+        <h1 id="sectionTitle">Bienvenido, Maria</h1>  
+
+        <div class="user-top">  
+            <i class="fa-solid fa-circle-user"></i>  
+            <span>Maria Perez</span>  
+        </div>  
+    </div>  
+
+
+    <!-- INICIO -->  
+    <section id="inicio" class="section active-section">  
+
+        <div class="cards-grid">  
+
+            <div class="card">  
+                <i class="fa-solid fa-file-invoice"></i>  
+                <h3>Estado de cuenta</h3>  
+                <h2>$110,000</h2>  
+                <p>Saldo pendiente</p>  
+            </div>  
+
+            <div class="card">  
+                <i class="fa-solid fa-calendar-days"></i>  
+                <h3>Próximo pago</h3>  
+                <h2>23 Abril 2026</h2>  
+                <p>Cuota de mantenimiento</p>  
+            </div>  
+
+            <div class="card">  
+                <i class="fa-solid fa-circle-exclamation"></i>  
+                <h3>Incidencias activas</h3>  
+                <h2>2</h2>  
+            </div>  
+
+            <div class="card">  
+                <i class="fa-solid fa-clipboard-list"></i>  
+                <h3>Reservas</h3>  
+                <h2>1</h2>  
+            </div>  
+
+        </div>  
+
+
+        <div class="double-grid">  
+
+            <div class="panel">  
+                <h2>Últimas notificaciones</h2>  
+
+                <div class="notification-item">  
+                    <div>  
+                        <h4>Mantenimiento en la piscina</h4>  
+                        <p>El mantenimiento será el 25 de abril.</p>  
+                    </div>  
+                    <span>19 abril 2026</span>  
+                </div>  
+
+                <div class="notification-item">  
+                    <div>  
+                        <h4>Asamblea general</h4>  
+                        <p>La asamblea general será el 8 de mayo.</p>  
+                    </div>  
+                    <span>30 abril 2026</span>  
+                </div>  
+            </div>  
+
+
+            <div class="panel">  
+                <h2>Resumen del estado</h2>  
+
+                <div class="status-item">  
+                    <span>Pagos</span>  
+                    <strong class="pending">Pendiente</strong>  
+                </div>  
+
+                <div class="status-item">  
+                    <span>Incidencia</span>  
+                    <strong class="active-status">Activa</strong>  
+                </div>  
+            </div>  
+
+        </div>  
+    </section>  
+
+
+    <!-- PAGOS -->  
+    <section id="pagos" class="section">  
+
+        <div class="payments-grid">  
+
+            <div class="card payment-card">  
+                <h3>Saldo pendiente</h3>  
+                <h1>$110,000</h1>  
+                <p class="pending">Pendiente</p>  
+            </div>  
+
+            <div class="card payment-card">  
+                <h3>Próximo pago</h3>  
+                <h2>23 abril 2026</h2>  
+                <p>Cuota de mantenimiento</p>  
+            </div>  
+
+        </div>  
+
+
+        <div class="panel table-panel">  
+            <h2>Detalle de pago</h2>  
+
+            <div class="table-row">  
+                <span>Cuota de mantenimiento - 23 abril</span>  
+                <strong>$90,000</strong>  
+            </div>  
+
+            <div class="table-row">  
+                <span>Fondo de reserva - 23 abril</span>  
+                <strong>$20,000</strong>  
+            </div>  
+
+            <div class="table-row total-row">  
+                <span>Total</span>  
+                <strong>$110,000</strong>  
+            </div>  
+        </div>  
+
+
+        <div class="panel table-panel">  
+            <h2>Historial de pagos</h2>  
+
+            <div class="table-row">  
+                <span>Pago mantenimiento - Marzo 2026</span>  
+                <strong>Pagado</strong>  
+            </div>  
+
+            <div class="table-row">  
+                <span>Pago mantenimiento - Febrero 2026</span>  
+                <strong>Pagado</strong>  
+            </div>  
+
+            <div class="table-row">  
+                <span>Pago mantenimiento - Enero 2026</span>  
+                <strong>Pagado</strong>  
+            </div>  
+        </div>  
+
+        <button class="primary-btn" onclick="openModal('paymentModal')">  
+            Pagar ahora  
+        </button>  
+    </section>  
+
+
+    <!-- RESERVAS -->  
+    <section id="reservas" class="section">  
+
+        <div class="section-header">  
+            <div>  
+                <p class="section-description">
+                Reserva las áreas comunes del residencial</p>  
+            </div>  
+
+            <button class="primary-btn small-btn" onclick="openModal('reserveModal')">  
+                + Nueva reserva  
+            </button>  
+        </div>  
+
+
+        <h3 class="subtitle">Áreas comunes</h3>  
+
+        <div class="areas-grid">  
+
+            <div class="area-card">  
+                <img src="https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?q=80&w=1200&auto=format&fit=crop" alt="Piscina">  
+                <h4>Piscina</h4>  
+                <p class="reserved">Reservada</p>  
+                <p>20 mayo 2025 - 3:00 p.m. a 8:00 p.m.</p>  
+                <button onclick="openModal('detailModal')">Ver detalles</button>  
+            </div>  
+
+            <div class="area-card">  
+                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=1200&auto=format&fit=crop" alt="BBQ">  
+                <h4>Área BBQ</h4>  
+                <p class="available">Disponible</p>  
+                <p>Libre para reservar</p>  
+                <button onclick="openModal('detailModal')">Ver detalles</button>  
+            </div>  
+
+            <div class="area-card">  
+                <img src="https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&w=1200&auto=format&fit=crop" alt="Salón">  
+                <h4>Salón de eventos</h4>  
+                <p class="reserved">Reservada</p>  
+                <p>22 mayo 2025 - 5:00 p.m. a 11:00 p.m.</p>  
+                <button onclick="openModal('detailModal')">Ver detalles</button>  
+            </div>  
+
+        </div>  
+
+
+        <h3 class="subtitle">Mis reservas</h3>  
+
+        <div class="reservation-card">  
+            <img src="https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?q=80&w=1200&auto=format&fit=crop">  
+
+            <div>  
+                <h3>Piscina</h3>  
+                <p>20 mayo 2025</p>  
+                <p>3:00 p.m. - 8:00 p.m.</p>  
+            </div>  
+
+            <div class="reservation-status confirmed">  
+                Confirmada  
+            </div>  
+        </div>  
+
+    </section>  
+
+
+    <!-- INCIDENCIAS -->  
+    <section id="incidencias" class="section">  
+
+        <div class="section-header">  
+            <div>  
+             
+                <p class="section-description">
+                    Consulta el estado de tus incidencias o reporta un nuevo problema</p>  
+            </div>  
+
+            <button class="primary-btn small-btn" onclick="showSection('reportar')">  
+                + Reportar incidencias  
+            </button>  
+        </div>  
+
+
+        <div class="incident-card">  
+            <div>  
+                <h3>Ascensor dañado</h3>  
+                <p>El ascensor del edificio no está funcionando.</p>  
+            </div>  
+
+            <span class="pending-badge">Pendiente</span>  
+        </div>  
+
+        <div class="incident-card">  
+            <div>  
+                <h3>Luz del pasillo</h3>  
+                <p>La luz del segundo piso parpadea constantemente.</p>  
+            </div>  
+
+            <span class="process-badge">En proceso</span>  
+        </div>  
+
+        <div class="incident-card">  
+            <div>  
+                <h3>Fuga de agua</h3>  
+                <p>Hay una fuga de agua en el área del jardín.</p>  
+            </div>  
+
+            <span class="resolved-badge">Resuelto</span>  
+        </div>  
+
+    </section>  
+
+
+      
+    <!-- REPORTAR INCIDENCIA -->  
+    <section id="reportar" class="section">  
+
+        <button class="back-btn" onclick="showSection('incidencias')">  
+            <i class="fa-solid fa-arrow-left"></i>  
+        </button>  
+
+        <p class="section-description">
+            Completa el formulario y envialo para saber que sucede y ayudarte.
+        </p>
+
+        <form class="incident-form" onsubmit="sendIncident(event)">  
+
+            <label>Tipo de incidencia</label>  
+            <select>  
+                <option>Seleccione una opción</option>  
+                <option>Limpieza</option>  
+                <option>Mantenimiento</option>  
+                <option>Seguridad</option>  
+                <option>convivencia</option>  
+                <option>Administrativas</option>  
+                <option>Salud</option>  
+                <option>Otros</option>  
+            </select>  
+
+            <label>Título</label>  
+            <input type="text" placeholder="Ej. Luz dañada">  
+
+            <label>Descripción</label>  
+            <textarea placeholder="Describe lo sucedido"></textarea>  
+
+            <label>Ubicación</label>  
+            <input type="text" placeholder="Ej. Piscina principal">  
+
+            <label>Adjuntar fotos</label>  
+            <input type="file">  
+
+            <button class="primary-btn">Enviar incidencia</button>  
+        </form>  
+
+    </section>  
+
+
+    <!-- NOTIFICACIONES -->  
+    <section id="notificaciones" class="section">  
+
+        
+        
+        <p class="section-description">
+        Aqui te notificaremos sobre eventos, pagos, mantenimiento y avisos importantes
+        del residencial.
+        </p>
+
+        <div class="notification-box">  
+            <h4>Aviso importante</h4>  
+            <p>Habrá mantenimiento en el área de piscina este viernes.</p>  
+        </div>  
+
+        <div class="notification-box">  
+            <h4>Recordatorio de pago</h4>  
+            <p>Tu pago vence el 23 de abril.</p>  
+        </div>  
+
+        <div class="notification-box">  
+            <h4>Evento comunitario</h4>  
+            <p>Noche de cine en el salón de eventos.</p>  
+        </div>  
+
+    </section>  
+
+
+    <!-- PERFIL -->  
+    <section id="perfil" class="section">  
+
+     
+        
+        <p class="section-description">
+            Aqui podras ver y editar tu informacion personal.
+        </p>
+
+        <div class="profile-card">  
+
+            <div class="profile-group">  
+                <label>Nombre</label>  
+                <input type="text" value="Maria">  
+            </div>  
+
+            <div class="profile-group">  
+                <label>Apellido</label>  
+                <input type="text" value="Perez">  
+            </div>  
+
+            <div class="profile-group">  
+                <label>Correo</label>  
+                <input type="email" value="maria@gmail.com">  
+            </div>  
+
+            <div class="profile-group">  
+                <label>Idioma</label>  
+                <select>  
+                    <option>Español</option>  
+                    <option>English</option>  
+                </select>  
+            </div>  
+
+            <div class="profile-group">  
+                <label>Número</label>  
+                <input type="text" value="809-000-0000">  
+            </div>  
+
+            <button class="primary-btn">Guardar cambios</button>  
+        </div>  
+
+    </section>  
+
+</main>
+
+</div>  <!-- MODAL PAGO -->  <div class="modal" id="paymentModal">  
+    <div class="modal-content">  <button class="close-btn" onclick="closeModal('paymentModal')">×</button>  
+
+    <h2>Realizar pago</h2>  
+
+    <div class="panel">  
+        <h3>Total a pagar</h3>  
+        <h1>$110,000</h1>  
+    </div>  
+
+    <div class="panel table-panel">  
+        <div class="table-row">  
+            <span>Cuota de mantenimiento</span>  
+            <strong>$90,000</strong>  
+        </div>  
+
+        <div class="table-row">  
+            <span>Fondo de reserva</span>  
+            <strong>$20,000</strong>  
+        </div>  
+    </div>  
+
+    <div class="panel">  
+        <h3>Método de pago</h3>  
+
+        <label><input type="radio" checked> Tarjeta débito/crédito</label>  
+        <label><input type="radio"> Transferencia</label>  
+    </div>  
+
+    <button class="primary-btn">Pagar $110,000</button>  
+</div>
+
+</div>  <!-- MODAL NUEVA RESERVA -->  <div class="modal" id="reserveModal">  
+    <div class="modal-content">  <button class="close-btn" onclick="closeModal('reserveModal')">×</button>  
+
+    <h2>Nueva reserva</h2>  
+
+    <input type="text" placeholder="Seleccione un área">  
+    <input type="date">  
+    <<label>Hora de inicio</label>
+
+<input type="time">  <label>Hora de finalización</label>
+<input type="time">
+<input type="number" placeholder="Cantidad de personas">
+<input type="text" placeholder="Motivo de la reserva">
+
+<button class="primary-btn" onclick="nextReservation()">  
+        Continuar  
+    </button>  
+</div>
+
+</div>  <!-- MODAL RESUMEN -->  <div class="modal" id="summaryModal">  
+    <div class="modal-content">  <button class="close-btn" onclick="closeModal('summaryModal')">×</button>  
+
+    <h2>Resumen de la reserva</h2>  
+
+    <div class="table-row">  
+        <span>Área seleccionada</span>  
+        <strong>Piscina</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Horario</span>  
+        <strong>3:00 p.m.</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Duración</span>  
+        <strong>5 horas</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Personas</span>  
+        <strong>10</strong>  
+    </div>  
+
+    <button class="primary-btn" onclick="confirmReservation()">  
+        Confirmar reserva  
+    </button>  
+</div>
+
+</div>  <!-- MODAL CONFIRMACION -->  <div class="modal" id="successModal">  
+    <div class="modal-content success-box">  <h2>Reserva confirmada</h2>  
+    <p>Tu reserva ha sido completada satisfactoriamente.</p>  
+
+    <div class="table-row">  
+        <span>Área</span>  
+        <strong>Piscina</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Fecha</span>  
+        <strong>20 mayo 2025</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Hora</span>  
+        <strong>3:00 p.m.</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Personas</span>  
+        <strong>10</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Código de reserva</span>  
+        <strong>#A102</strong>  
+    </div>  
+
+    <button class="primary-btn" onclick="finishReservation()">  
+        Cerrar  
+    </button>  
+</div>
+
+</div>  <!-- MODAL DETALLES -->  <div class="modal" id="detailModal">  
+    <div class="modal-content">  <button class="close-btn" onclick="closeModal('detailModal')">×</button>  
+
+    <h2>Detalle del área</h2>  
+
+    <img class="detail-image" src="https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?q=80&w=1200&auto=format&fit=crop">  
+
+    <h3>Piscina - Disponible</h3>  
+
+    <div class="table-row">  
+        <span>Capacidad máxima</span>  
+        <strong>30 personas</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Horario disponible</span>  
+        <strong>8:00 a.m. - 10:00 p.m.</strong>  
+    </div>  
+
+    <div class="table-row">  
+        <span>Ubicación</span>  
+        <strong>Torre A</strong>  
+    </div>  
+
+    <p class="rules-title">Normas de uso</p>  
+
+    <ul class="rules-list">  
+        <li>No música alta.</li>  
+        <li>Niños acompañados por adultos.</li>  
+        <li>Mantener el área limpia.</li>  
+    </ul>  
+
+    <button class="primary-btn" onclick="reserveFromDetails()">  
+        Reservar ahora  
+    </button>  
+</div>
+
+</div>  <script src="script.js"></script>  </body>  
+</html>
