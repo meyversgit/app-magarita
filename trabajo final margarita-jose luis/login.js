@@ -46,6 +46,10 @@ async function doLogin() {
     });
     const data = await res.json();
     if (res.ok) {
+      if (data.user.rol !== 'admin') {
+        setAlert('login-alert', 'Acceso restringido: Esta cuenta no es de administrador.', 'error');
+        return;
+      }
       // Save user info for the admin panel profile
       sessionStorage.setItem('condoUser', JSON.stringify(data.user));
       setAlert('login-alert', '¡Inicio de sesión exitoso!', 'success');
@@ -64,6 +68,7 @@ async function doRegister() {
   const nombre    = document.getElementById('reg-nombre').value.trim();
   const apellido  = document.getElementById('reg-apellido').value.trim();
   const email     = document.getElementById('reg-email').value.trim();
+  const telefono  = document.getElementById('reg-telefono').value.trim();
   const password  = document.getElementById('reg-password').value;
   const password2 = document.getElementById('reg-password2').value;
   const terms     = document.getElementById('reg-terms').checked;
@@ -85,7 +90,7 @@ async function doRegister() {
     const res = await fetch('http://localhost:5000/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, apellido, email, password })
+      body: JSON.stringify({ nombre, apellido, email, telefono, password })
     });
     const data = await res.json();
     if (res.ok) {

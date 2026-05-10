@@ -43,9 +43,14 @@ function showPanel(id, navBtn, menuId) {
       if (chev) chev.classList.add('open');
     }
   }
+  if (id === 'dashboard')         loadDashboard();
   if (id === 'lista-residentes')  loadResidentes();
+  if (id === 'panel-usuarios')    loadUsuarios();
   if (id === 'lista-incidencias') loadIncidencias();
   if (id === 'lista-anuncios')    loadAnuncios();
+  if (id === 'lista-pagos')       loadPagos();
+  if (id === 'historial-pagos')   loadHistorialPagos();
+  if (id === 'registrar-pago')    loadResidentesSelect();
 }
 
 function toggleMenu(id) {
@@ -296,17 +301,17 @@ async function editarResidente(id) {
 
 async function submitResidente() {
   const body = {
-    nombre:      document.getElementById('res-nombre').value.trim(),
-    apellido:    document.getElementById('res-apellido').value.trim(),
-    cedula:      document.getElementById('res-cedula').value.trim(),
-    telefono:    document.getElementById('res-telefono').value.trim(),
-    correo:      document.getElementById('res-correo').value.trim(),
-    apartamento: document.getElementById('res-apto').value.trim(),
-    piso:        document.getElementById('res-piso').value || null,
-    estado:      document.getElementById('res-estado').value,
-    contrato:    document.getElementById('res-contrato').value,
-    fechaIngreso:document.getElementById('res-fecha-ingreso').value || null,
-    notas:       document.getElementById('res-notas').value.trim()
+    nombre:       document.getElementById('res-nombre').value.trim(),
+    apellido:     document.getElementById('res-apellido').value.trim(),
+    cedula:       document.getElementById('res-cedula').value.trim(),
+    telefono:     document.getElementById('res-telefono').value.trim(),
+    correo:       document.getElementById('res-correo').value.trim(),
+    apartamento:  document.getElementById('res-apto').value.trim(),
+    piso:         document.getElementById('res-piso').value || null,
+    estado:       document.getElementById('res-estado').value,
+    contrato:     document.getElementById('res-contrato').value,
+    fechaIngreso: document.getElementById('res-fecha-ingreso').value || null,
+    notas:        document.getElementById('res-notas').value.trim()
   };
   if (!body.nombre || !body.apellido) {
     showToast('error', 'Campos requeridos', 'Nombre y apellido son obligatorios.'); return;
@@ -319,7 +324,128 @@ async function submitResidente() {
     if (res.ok) {
       showToast('success', 'Residente guardado', data.message);
       currentResidenteId = null;
+      loadDashboard();
       setTimeout(() => showPanel('lista-residentes', null, 'residentes'), 800);
+    } else { showToast('error', 'Error', data.message); }
+  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const res  = await fetch(API + '/api/dashboard');
+    const d    = await res.json();
+    const set  = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('dash-total-residentes',    d.totalResidentes    ?? '--');
+    set('dash-pagos-pendientes',    d.pagosPendientes    ?? '--');
+    set('dash-incidencias-activas', d.incidenciasActivas ?? '--');
+    const rec = d.recaudacionMes ?? 0;
+    set('dash-recaudacion', 'RD$' + rec.toLocaleString('es-DO', {minimumFractionDigits:0}));
+    // Actividad reciente
+    const act = document.getElementById('dash-actividad');
+    if (act && d.ultimosResidentes && d.ultimosResidentes.length) {
+      act.innerHTML = d.ultimosResidentes.map(r => `
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:#f0f4f9;">👤</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Residente registrado</div>
+            <div style="font-size:12px;color:#8a9ab5;">${r.Nombre} ${r.Apellido||''} · Apto ${r.Apartamento||'—'}${r.FechaIngreso ? ' · ' + new Date(r.FechaIngreso).toLocaleDateString('es-DO') : ''}</div>
+          </div>
+        </div>`).join('');
+    }
+    // Conteo en lista de residentes
+    const rl = document.getElementById('res-count-label');
+    if (rl) rl.textContent = (d.totalResidentes ?? 0) + ' residentes registrados';
+  } catch(e) { console.warn('Dashboard sin datos:', e.message); }
+}
+
+// ── PAGOS ────────────────────────────────────────────────────
+async function loadResidentesSelect() {
+  try {
+    const res  = await fetch(API + '/api/residentes');
+    const data = await res.json();
+    const sel  = document.getElementById('pago-residente-id');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seleccionar residente...</option>' +
+      data.map(r => `<option value="${r.IdResidente}">${r.Nombre} ${r.Apellido||''} – Apto ${r.Apartamento||'—'}</option>`).join('');
+  } catch(e) { console.warn('No se cargaron residentes para pagos:', e.message); }
+}
+
+async function loadPagos() {
+  const tbody = document.getElementById('pagos-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>';
+  try {
+    const res  = await fetch(API + '/api/pagos');
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:24px;">No hay pagos registrados.</td></tr>';
+      return;
+    }
+    const badge = { pagado:'badge-green', pendiente:'badge-yellow', vencido:'badge-red' };
+    const capEst = e => e ? e.charAt(0).toUpperCase()+e.slice(1) : '—';
+    tbody.innerHTML = data.map(p => `<tr>
+      <td><span style="font-weight:600;">${p.Nombre||''} ${p.Apellido||''}</span></td>
+      <td>${p.Apartamento||'—'}</td>
+      <td>${p.Concepto||'—'}</td>
+      <td>RD$${Number(p.Monto||0).toLocaleString('es-DO')}</td>
+      <td>${p.FechaPago ? new Date(p.FechaPago).toLocaleDateString('es-DO') : '—'}</td>
+      <td><span class="badge ${badge[p.Estado]||'badge-gray'}">${capEst(p.Estado)}</span></td>
+      <td><button class="btn-secondary btn-sm" onclick="showToast('success','Recibo','#PAG-${p.IdPago}')">Ver recibo</button></td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadHistorialPagos() {
+  const tbody = document.getElementById('historial-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>';
+  try {
+    const res  = await fetch(API + '/api/pagos');
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:24px;">No hay registros.</td></tr>';
+      return;
+    }
+    const badge = { Pagado:'badge-green', Pendiente:'badge-yellow', Vencido:'badge-red' };
+    tbody.innerHTML = data.map((p, i) => `<tr>
+      <td style="color:#8a9ab5;">#${String(p.IdPago).padStart(4,'0')}</td>
+      <td>${p.Nombre||''} ${p.Apellido||''}</td>
+      <td>${p.Apartamento||'—'}</td>
+      <td>${p.Concepto||'—'}</td>
+      <td>RD$${Number(p.Monto||0).toLocaleString('es-DO')}</td>
+      <td>${p.MetodoPago||'—'}</td>
+      <td>${p.FechaPago ? new Date(p.FechaPago).toLocaleDateString('es-DO') : '—'}</td>
+      <td><span class="badge ${badge[p.Estado]||'badge-gray'}">${p.Estado||'—'}</span></td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function submitPago() {
+  const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const body = {
+    residente_id:  get('pago-residente-id') || null,
+    monto:         get('pago-monto'),
+    metodo_pago:   get('pago-metodo'),
+    fecha_pago:    get('pago-fecha') || null,
+    estado:        'pagado',
+    notas:         get('pago-notas')
+  };
+  if (!body.residente_id || !body.monto) {
+    showToast('error', 'Campos requeridos', 'Residente y monto son obligatorios.'); return;
+  }
+  try {
+    const res  = await fetch(API + '/api/pagos', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('success', 'Pago registrado', data.message);
+      loadDashboard();
+      ['pago-residente-id','pago-monto','pago-metodo','pago-referencia','pago-fecha','pago-vencimiento','pago-notas'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+      setTimeout(() => showPanel('lista-pagos', null, 'pagos'), 800);
     } else { showToast('error', 'Error', data.message); }
   } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
@@ -359,10 +485,11 @@ async function loadIncidencias() {
       container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">No hay incidencias registradas.</div>';
       return;
     }
-    const prioColor  = { Alta:'#fad0d0', Normal:'#dde5ef', Baja:'#dde5ef' };
-    const estadoBadge= { 'Abierta':'badge-red', 'En proceso':'badge-yellow', 'Resuelta':'badge-green' };
-    const estadoIcon = { 'Abierta':'🚨', 'En proceso':'🔧', 'Resuelta':'✅' };
-    const iconBg     = { 'Abierta':'#fff0f0', 'En proceso':'#fff8e6', 'Resuelta':'#e6f7ee' };
+    const prioColor   = { 'alta':'#fad0d0', 'normal':'#dde5ef', 'baja':'#dde5ef', 'plomeria':'#dde5ef', 'electricidad':'#dde5ef', 'seguridad':'#dde5ef', 'limpieza':'#dde5ef' };
+    const estadoBadge = { 'abierta':'badge-red', 'en_proceso':'badge-yellow', 'resuelta':'badge-green', 'cerrada':'badge-gray' };
+    const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'🔧', 'resuelta':'✅', 'cerrada':'📁' };
+    const iconBg      = { 'abierta':'#fff0f0', 'en_proceso':'#fff8e6', 'resuelta':'#e6f7ee', 'cerrada':'#f0f4f9' };
+    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : '—';
     container.innerHTML = data.map(inc => `
       <div style="background:#fff;border-radius:12px;border:0.5px solid ${prioColor[inc.Prioridad]||'#dde5ef'};padding:20px;cursor:pointer;margin-bottom:12px;"
         onclick="abrirDetalleIncidencia(${inc.IdIncidencia})"
@@ -374,7 +501,7 @@ async function loadIncidencias() {
             <div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
                 <div style="font-size:14px;font-weight:700;color:#0f2d52;">${inc.Titulo}</div>
-                <span class="badge ${estadoBadge[inc.Estado]||'badge-gray'}">${inc.Estado}</span>
+                <span class="badge ${estadoBadge[inc.Estado]||'badge-gray'}">${cap(inc.Estado)}</span>
               </div>
               <div style="font-size:12.5px;color:#8a9ab5;">${inc.Ubicacion?'📍 '+inc.Ubicacion+' · ':''}${inc.FechaReporte?new Date(inc.FechaReporte).toLocaleString('es-DO'):''}</div>
             </div>
@@ -455,12 +582,13 @@ async function loadAnuncios() {
       container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">No hay anuncios creados aún.</div>';
       return;
     }
-    const tipoColor = { general:'#0d7d45', urgente:'#e24b4a', mantenimiento:'#b07800', evento:'#3b9eff', cobro:'#534ab7' };
-    const tipoBadge = { general:'badge-green', urgente:'badge-red', mantenimiento:'badge-yellow', evento:'badge-blue', cobro:'badge-navy' };
+    const tipoColor = { anuncio:'#0d7d45', incidencia:'#e24b4a', reserva:'#3b9eff', pago:'#534ab7', otro:'#b07800' };
+    const tipoBadge = { anuncio:'badge-green', incidencia:'badge-red', reserva:'badge-blue', pago:'badge-navy', otro:'badge-yellow' };
+    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
     container.innerHTML = data.map(n => `
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;border-left:4px solid ${tipoColor[n.Tipo]||'#3b9eff'};margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:10px;"><span class="badge ${tipoBadge[n.Tipo]||'badge-gray'}">${n.Tipo}</span><div style="font-size:14px;font-weight:700;color:#0f2d52;">${n.Titulo}</div></div>
+          <div style="display:flex;align-items:center;gap:10px;"><span class="badge ${tipoBadge[n.Tipo]||'badge-gray'}">${cap(n.Tipo)}</span><div style="font-size:14px;font-weight:700;color:#0f2d52;">${n.Titulo}</div></div>
           <div style="font-size:12px;color:#8a9ab5;">${n.FechaCreacion?new Date(n.FechaCreacion).toLocaleString('es-DO'):''}</div>
         </div>
         <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">${n.Mensaje||''}</div>
@@ -469,10 +597,69 @@ async function loadAnuncios() {
   } catch(e) { /* silent */ }
 }
 
+// ── USUARIOS ──────────────────────────────────────────────────
+async function loadUsuarios() {
+  const tbody = document.getElementById('usuarios-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>';
+  try {
+    const res  = await fetch(API + '/api/usuarios');
+    const data = await res.json();
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#8a9ab5;padding:24px;">No hay usuarios.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(u => `<tr>
+      <td><span style="font-weight:600;">${u.nombre} ${u.apellido||''}</span></td>
+      <td>${u.email}</td>
+      <td>${u.telefono||'—'}</td>
+      <td>
+        <select class="form-input form-select" style="padding:4px 8px;font-size:12px;width:120px;" onchange="updateUserRole(${u.id}, this.value)">
+          <option value="residente" ${u.rol==='residente'?'selected':''}>Residente</option>
+          <option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>
+        </select>
+      </td>
+      <td><span class="badge ${u.activo?'badge-green':'badge-gray'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      <td><button class="btn-secondary btn-sm" onclick="toggleUserStatus(${u.id}, ${u.activo?0:1})">${u.activo?'Desactivar':'Activar'}</button></td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function updateUserRole(id, rol) {
+  try {
+    const res = await fetch(`${API}/api/usuarios/${id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ rol })
+    });
+    const data = await res.json();
+    if (res.ok) { showToast('success', 'Usuario actualizado', data.message); }
+    else { showToast('error', 'Error', data.message); }
+  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo actualizar el rol.'); }
+}
+
+async function toggleUserStatus(id, activo) {
+  try {
+    const res = await fetch(`${API}/api/usuarios/${id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ activo })
+    });
+    if (res.ok) { loadUsuarios(); showToast('success', 'Estado actualizado', 'El estado del usuario ha sido cambiado.'); }
+  } catch(e) { showToast('error', 'Error', 'No se pudo cambiar el estado.'); }
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 (function init() {
-  loadNotificaciones();
   const user = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
+  if (!user || user.rol !== 'admin') {
+    alert('Acceso restringido. Por favor inicia sesión como administrador.');
+    window.location.href = 'Login.html';
+    return;
+  }
+  
+  loadNotificaciones();
+  loadDashboard();
   if (user) {
     const initials = ((user.nombre||'A')[0] + (user.apellido||'P')[0]).toUpperCase();
     const ta = document.getElementById('topbar-avatar');

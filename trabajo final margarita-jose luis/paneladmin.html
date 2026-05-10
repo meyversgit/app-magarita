@@ -66,6 +66,7 @@
       </button>
       <div class="submenu" id="sub-residentes">
         <button class="sub-link" onclick="showPanel('lista-residentes',null,'residentes')">Lista de residentes</button>
+        <button class="sub-link" onclick="showPanel('panel-usuarios',null,'residentes')">Usuarios / Roles</button>
       </div>
     </div>
 
@@ -207,8 +208,8 @@
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#1a6fc4" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#1a6fc4" stroke-width="1.8"/></svg>
             </div>
           </div>
-          <div style="font-size:30px;font-weight:700;color:#0f2d52;">148</div>
-          <div style="font-size:12px;color:#0d7d45;margin-top:4px;">▲ +3 este mes</div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;" id="dash-total-residentes">--</div>
+          <div style="font-size:12px;color:#0d7d45;margin-top:4px;">Residentes activos</div>
         </div>
         <div class="stat-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -217,8 +218,8 @@
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" stroke="#b07800" stroke-width="1.8"/><path d="M1 10h22" stroke="#b07800" stroke-width="1.8"/></svg>
             </div>
           </div>
-          <div style="font-size:30px;font-weight:700;color:#0f2d52;">12</div>
-          <div style="font-size:12px;color:#b07800;margin-top:4px;">⚠ Vencen esta semana</div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;" id="dash-pagos-pendientes">--</div>
+          <div style="font-size:12px;color:#b07800;margin-top:4px;">⚠ Pagos sin liquidar</div>
         </div>
         <div class="stat-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -227,8 +228,8 @@
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
           </div>
-          <div style="font-size:30px;font-weight:700;color:#0f2d52;">3</div>
-          <div style="font-size:12px;color:#c0392b;margin-top:4px;">● 1 urgente</div>
+          <div style="font-size:30px;font-weight:700;color:#0f2d52;" id="dash-incidencias-activas">--</div>
+          <div style="font-size:12px;color:#c0392b;margin-top:4px;">● Abiertas / En proceso</div>
         </div>
         <div class="stat-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -246,34 +247,9 @@
       <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
         <!-- Recent activity -->
         <div class="stat-card">
-          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Actividad reciente</div>
-          <div class="timeline-item">
-            <div class="timeline-dot" style="background:#e6f1fb;">💳</div>
-            <div>
-              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Pago registrado · Apto 4B</div>
-              <div style="font-size:12px;color:#8a9ab5;">Mantenimiento mensual · RD$4,500 · hace 20 min</div>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-dot" style="background:#fff0f0;">⚠️</div>
-            <div>
-              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Nueva incidencia · Área común</div>
-              <div style="font-size:12px;color:#8a9ab5;">Fuga de agua en pasillo 2do piso · hace 1h</div>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-dot" style="background:#e6f7ee;">📅</div>
-            <div>
-              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Reserva aprobada · Salón</div>
-              <div style="font-size:12px;color:#8a9ab5;">Res. García · 28 abr · 18:00–22:00 · hace 3h</div>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-dot" style="background:#f0f4f9;">👤</div>
-            <div>
-              <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Nuevo residente registrado</div>
-              <div style="font-size:12px;color:#8a9ab5;">Carlos Mendoza · Apto 7C · hace 5h</div>
-            </div>
+          <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Residentes recientes</div>
+          <div id="dash-actividad">
+            <div style="font-size:13px;color:#8a9ab5;text-align:center;padding:16px;">Cargando actividad...</div>
           </div>
         </div>
 
@@ -281,10 +257,10 @@
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div class="stat-card">
             <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Recaudación del mes</div>
-            <div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$284,500</div>
-            <div style="font-size:12px;color:#8a9ab5;margin-bottom:12px;">Meta: RD$320,000</div>
-            <div class="progress"><div class="progress-fill" style="width:89%;"></div></div>
-            <div style="font-size:12px;color:#0d7d45;margin-top:8px;">89% alcanzado</div>
+            <div style="font-size:26px;font-weight:700;color:#0f2d52;" id="dash-recaudacion">RD$--</div>
+            <div style="font-size:12px;color:#8a9ab5;margin-bottom:12px;">Mes en curso</div>
+            <div class="progress"><div class="progress-fill" style="width:0%;"></div></div>
+            <div style="font-size:12px;color:#0d7d45;margin-top:8px;">Recaudado este mes</div>
           </div>
           <div class="stat-card">
             <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Ocupación</div>
@@ -309,7 +285,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div>
           <div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Residentes</div>
-          <div style="font-size:13px;color:#8a9ab5;margin-top:2px;">148 residentes registrados</div>
+          <div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="res-count-label">-- residentes registrados</div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
           <input type="text" placeholder="🔍  Buscar residente..." class="form-input" style="width:240px;" oninput="filterTable(this.value,'res-table')"/>
@@ -323,6 +299,24 @@
           </tr></thead>
           <tbody id="res-tbody">
             <tr><td colspan="6" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando residentes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== GESTION DE USUARIOS ========== -->
+    <div id="panel-panel-usuarios" class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0f2d52;">Gestión de Usuarios</div>
+          <div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Administrar roles y accesos</div>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
+        <table class="data-table">
+          <thead><tr><th>Usuario</th><th>Email</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="usuarios-tbody">
+            <tr><td colspan="6" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando usuarios...</td></tr>
           </tbody>
         </table>
       </div>
@@ -447,11 +441,8 @@
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
         <table class="data-table">
           <thead><tr><th>Residente</th><th>Apto.</th><th>Concepto</th><th>Monto</th><th>Vencimiento</th><th>Estado</th><th>Acción</th></tr></thead>
-          <tbody>
-            <tr><td><span style="font-weight:600;">Carlos Mendoza</span></td><td>7C</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-green">Pagado</span></td><td><button class="btn-secondary btn-sm">Ver recibo</button></td></tr>
-            <tr><td><span style="font-weight:600;">María García</span></td><td>4B</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-green">Pagado</span></td><td><button class="btn-secondary btn-sm">Ver recibo</button></td></tr>
-            <tr><td><span style="font-weight:600;">José Rodríguez</span></td><td>2A</td><td>Mantenimiento</td><td>RD$4,500</td><td>05/04/2026</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showToast('success','Recordatorio enviado','Se notificó al residente por correo.')">Notificar</button></td></tr>
-            <tr><td><span style="font-weight:600;">Laura Díaz</span></td><td>8A</td><td>Mantenimiento</td><td>RD$4,500</td><td>31/03/2026</td><td><span class="badge badge-red">Vencido</span></td><td><button class="btn-danger btn-sm" onclick="showToast('success','Cobro enviado','Se envió aviso de cobro al residente.')">Cobrar</button></td></tr>
+          <tbody id="pagos-tbody">
+            <tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando pagos...</td></tr>
           </tbody>
         </table>
       </div>
@@ -463,17 +454,18 @@
       <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Residente *</label><select class="form-input form-select"><option>Seleccionar residente...</option><option>Carlos Mendoza – Apto 7C</option><option>María García – Apto 4B</option><option>José Rodríguez – Apto 2A</option></select></div>
-            <div class="form-group"><label class="form-label">Concepto *</label><select class="form-input form-select"><option>Mantenimiento mensual</option><option>Agua</option><option>Electricidad áreas comunes</option><option>Multa</option><option>Otro</option></select></div>
-            <div class="form-group"><label class="form-label">Monto *</label><input class="form-input" type="number" placeholder="0.00" step="0.01"/></div>
-            <div class="form-group"><label class="form-label">Fecha de pago *</label><input class="form-input" type="date"/></div>
-            <div class="form-group"><label class="form-label">Método de pago</label><select class="form-input form-select"><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Cheque</option></select></div>
-            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Número de referencia</label><input class="form-input" type="text" placeholder="Ej: TRF-20260426-001"/></div>
-            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Notas</label><textarea class="form-input" rows="3" placeholder="Observaciones adicionales..."></textarea></div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Residente *</label><select class="form-input form-select" id="pago-residente-id"><option value="">Seleccionar residente...</option></select></div>
+            <div class="form-group"><label class="form-label">Concepto *</label><select class="form-input form-select" id="pago-concepto"><option value="Mantenimiento mensual">Mantenimiento mensual</option><option value="Agua">Agua</option><option value="Electricidad áreas comunes">Electricidad áreas comunes</option><option value="Multa">Multa</option><option value="Otro">Otro</option></select></div>
+            <div class="form-group"><label class="form-label">Monto *</label><input class="form-input" type="number" id="pago-monto" placeholder="0.00" step="0.01"/></div>
+            <div class="form-group"><label class="form-label">Fecha de pago *</label><input class="form-input" type="date" id="pago-fecha"/></div>
+            <div class="form-group"><label class="form-label">Fecha vencimiento</label><input class="form-input" type="date" id="pago-vencimiento"/></div>
+            <div class="form-group"><label class="form-label">Método de pago</label><select class="form-input form-select" id="pago-metodo"><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Cheque">Cheque</option></select></div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Número de referencia</label><input class="form-input" type="text" id="pago-referencia" placeholder="Ej: TRF-20260426-001"/></div>
+            <div class="form-group" style="grid-column:span 2;"><label class="form-label">Notas</label><textarea class="form-input" rows="3" id="pago-notas" placeholder="Observaciones adicionales..."></textarea></div>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
             <button class="btn-secondary" onclick="showPanel('lista-pagos',null,'pagos')">Cancelar</button>
-            <button class="btn-primary" onclick="showToast('success','Pago registrado','El pago fue guardado y el recibo generado.')">Registrar pago</button>
+            <button class="btn-primary" onclick="submitPago()">Registrar pago</button>
           </div>
         </div>
         <div style="background:#f0f4f9;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
@@ -508,12 +500,8 @@
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
         <table class="data-table">
           <thead><tr><th>#</th><th>Residente</th><th>Apto.</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Estado</th></tr></thead>
-          <tbody>
-            <tr><td style="color:#8a9ab5;">#1045</td><td>Carlos Mendoza</td><td>7C</td><td>Mantenimiento</td><td>RD$4,500</td><td>Transferencia</td><td>15/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#1044</td><td>María García</td><td>4B</td><td>Mantenimiento</td><td>RD$4,500</td><td>Efectivo</td><td>14/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#1043</td><td>Ana López</td><td>10D</td><td>Agua</td><td>RD$850</td><td>Transferencia</td><td>12/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#1042</td><td>Pedro Ramírez</td><td>5F</td><td>Mantenimiento</td><td>RD$4,500</td><td>Tarjeta</td><td>10/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#1041</td><td>José Rodríguez</td><td>2A</td><td>Mantenimiento</td><td>RD$4,500</td><td>–</td><td>–</td><td><span class="badge badge-yellow">Pendiente</span></td></tr>
+          <tbody id="historial-tbody">
+            <tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando historial...</td></tr>
           </tbody>
         </table>
       </div>
