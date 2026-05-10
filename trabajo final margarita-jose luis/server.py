@@ -12,10 +12,10 @@ CORS(app)
 # ── Configuración de Base de Datos ────────────────────────────────────────────
 CONNECTION_STRING = (
     "Driver={ODBC Driver 17 for SQL Server};"
-    "Server=Meyvers;"
-    "Database=CondominioDB;"
-    "UID=trabajo;"
-    "PWD=meyversmarmolet.123;"
+    "Server=100.93.182.26;"
+    "Database=DB_CONDOMINIOS;"
+    "UID=Lily;"
+    "PWD=123456789;"
 )
 
 def get_db():
@@ -69,12 +69,12 @@ def register():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT IdUsuario FROM Usuarios WHERE Correo = ?", (correo,))
+        cursor.execute("SELECT id FROM usuario WHERE email = ?", (correo,))
         if cursor.fetchone():
             return jsonify({"message": "Ya existe una cuenta con ese correo electrónico."}), 409
         cursor.execute(
-            "INSERT INTO Usuarios (Password, IdRol, Nombre, Apellido, Correo, FechaRegistro) VALUES (?, ?, ?, ?, ?, GETDATE())",
-            (password, 2, nombre, apellido, correo)
+            "INSERT INTO usuario (password_hash, rol, nombre, apellido, email, created_at, activo) VALUES (?, ?, ?, ?, ?, GETDATE(), 1)",
+            (password, 'residente', nombre, apellido, correo)
         )
         conn.commit()
         return jsonify({"message": "Cuenta creada exitosamente."}), 201
@@ -99,20 +99,20 @@ def login():
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT Nombre, Apellido, Password, IdRol, Correo, FechaRegistro FROM Usuarios WHERE Correo = ?",
+            "SELECT nombre, apellido, password_hash, rol, email, created_at FROM usuario WHERE email = ?",
             (correo,)
         )
         row = cursor.fetchone()
-        if not row or row.Password != password:
+        if not row or row.password_hash != password:
             return jsonify({"message": "Correo o contraseña incorrectos."}), 401
         return safe_jsonify({
             "message": "Sesión iniciada.",
             "user": {
-                "nombre":   row.Nombre,
-                "apellido": row.Apellido,
-                "email":    row.Correo,
-                "rol":      row.IdRol,
-                "fechaRegistro": row.FechaRegistro
+                "nombre":   row.nombre,
+                "apellido": row.apellido,
+                "email":    row.email,
+                "rol":      row.rol,
+                "fechaRegistro": row.created_at
             }
         })
     except Exception as e:
@@ -130,7 +130,12 @@ def get_residentes():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Residentes ORDER BY FechaRegistro DESC")
+        cursor.execute("""
+            SELECT r.*, u.nombre, u.apellido, u.email, u.telefono 
+            FROM residente r
+            INNER JOIN usuario u ON r.usuario_id = u.id
+            ORDER BY r.fecha_ingreso DESC
+        """)
         rows = cursor.fetchall()
         return safe_jsonify(rows_to_list(rows, cursor))
     except Exception as e:
@@ -146,7 +151,12 @@ def get_residente(id):
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Residentes WHERE IdResidente = ?", (id,))
+        cursor.execute("""
+            SELECT r.*, u.nombre, u.apellido, u.email, u.telefono 
+            FROM residente r
+            INNER JOIN usuario u ON r.usuario_id = u.id
+            WHERE r.id = ?
+        """, (id,))
         row = cursor.fetchone()
         if not row:
             return jsonify({"message": "Residente no encontrado."}), 404
@@ -161,30 +171,23 @@ def get_residente(id):
 @app.route("/api/residentes", methods=["POST"])
 def create_residente():
     data = request.get_json(silent=True) or {}
-    nombre   = (data.get("nombre")   or "").strip()
-    apellido = (data.get("apellido") or "").strip()
-    if not nombre or not apellido:
-        return jsonify({"message": "Nombre y apellido son obligatorios."}), 400
+    usuario_id = data.get("usuario_id")
+    apartamento_id = data.get("apartamento_id")
+    if not usuario_id or not apartamento_id:
+        return jsonify({"message": "usuario_id y apartamento_id son obligatorios."}), 400
 
     conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO Residentes (Nombre, Apellido, Cedula, Telefono, Email, Apartamento, Piso, Estado, Tipo, FechaIngreso, Notas)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario)
+            VALUES (?, ?, ?, ?)
         """, (
-            nombre,
-            apellido,
-            data.get("cedula", ""),
-            data.get("telefono", ""),
-            data.get("correo", ""),
-            data.get("apartamento", ""),
-            data.get("piso") or None,
-            data.get("estado", "Activo"),
-            data.get("contrato", "Propietario"),
-            data.get("fechaIngreso") or None,
-            data.get("notas", "")
+            usuario_id,
+            apartamento_id,
+            data.get("fecha_ingreso") or None,
+            data.get("propietario", False)
         ))
         conn.commit()
         return jsonify({"message": "Residente registrado exitosamente."}), 201
@@ -203,22 +206,14 @@ def update_residente(id):
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("""
-            UPDATE Residentes SET
-                Nombre = ?, Apellido = ?, Cedula = ?, Telefono = ?, Email = ?,
-                Apartamento = ?, Piso = ?, Estado = ?, Tipo = ?, FechaIngreso = ?, Notas = ?
-            WHERE IdResidente = ?
+            UPDATE residente SET
+                usuario_id = ?, apartamento_id = ?, fecha_ingreso = ?, propietario = ?
+            WHERE id = ?
         """, (
-            data.get("nombre", ""),
-            data.get("apellido", ""),
-            data.get("cedula", ""),
-            data.get("telefono", ""),
-            data.get("correo", ""),
-            data.get("apartamento", ""),
-            data.get("piso") or None,
-            data.get("estado", "Activo"),
-            data.get("contrato", "Propietario"),
-            data.get("fechaIngreso") or None,
-            data.get("notas", ""),
+            data.get("usuario_id"),
+            data.get("apartamento_id"),
+            data.get("fecha_ingreso") or None,
+            data.get("propietario", False),
             id
         ))
         conn.commit()
@@ -238,7 +233,7 @@ def get_notificaciones():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Notificaciones ORDER BY FechaCreacion DESC")
+        cursor.execute("SELECT * FROM notificacion ORDER BY fecha_envio DESC")
         rows = cursor.fetchall()
         return safe_jsonify(rows_to_list(rows, cursor))
     except Exception as e:
@@ -261,8 +256,8 @@ def create_notificacion():
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO Notificaciones (Titulo, Mensaje, Tipo) VALUES (?, ?, ?)",
-            (titulo, mensaje, data.get("tipo", "general"))
+            "INSERT INTO notificacion (usuario_id, titulo, mensaje, tipo, leida, fecha_envio) VALUES (?, ?, ?, ?, 0, GETDATE())",
+            (data.get("usuario_id"), titulo, mensaje, data.get("tipo", "general"))
         )
         conn.commit()
         return jsonify({"message": "Notificación creada exitosamente."}), 201
@@ -279,7 +274,7 @@ def marcar_leida(id):
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE Notificaciones SET Leida = 1 WHERE IdNotificacion = ?", (id,))
+        cursor.execute("UPDATE notificacion SET leida = 1 WHERE id = ?", (id,))
         conn.commit()
         return jsonify({"message": "Notificación marcada como leída."})
     except Exception as e:
@@ -297,7 +292,7 @@ def get_incidencias():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM Incidencias ORDER BY FechaReporte DESC")
+        cursor.execute("SELECT * FROM incidencia ORDER BY fecha_reporte DESC")
         rows = cursor.fetchall()
         return safe_jsonify(rows_to_list(rows, cursor))
     except Exception as e:
@@ -318,16 +313,10 @@ def update_estado_incidencia(id):
     try:
         conn = get_db()
         cursor = conn.cursor()
-        if estado == "Resuelta":
-            cursor.execute(
-                "UPDATE Incidencias SET Estado = ?, FechaResolucion = GETDATE() WHERE IdIncidencia = ?",
-                (estado, id)
-            )
-        else:
-            cursor.execute(
-                "UPDATE Incidencias SET Estado = ?, FechaResolucion = NULL WHERE IdIncidencia = ?",
-                (estado, id)
-            )
+        cursor.execute(
+            "UPDATE incidencia SET estado = ?, fecha_actualizacion = GETDATE() WHERE id = ?",
+            (estado, id)
+        )
         conn.commit()
         return jsonify({"message": f"Incidencia actualizada a '{estado}'."})
     except Exception as e:
@@ -348,8 +337,8 @@ def create_incidencia():
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO Incidencias (Titulo, Descripcion, Ubicacion, Prioridad) VALUES (?, ?, ?, ?)",
-            (titulo, data.get("descripcion", ""), data.get("ubicacion", ""), data.get("prioridad", "Normal"))
+            "INSERT INTO incidencia (residente_id, titulo, descripcion, categoria, estado, fecha_reporte, fecha_actualizacion) VALUES (?, ?, ?, ?, 'Abierta', GETDATE(), GETDATE())",
+            (data.get("residente_id"), titulo, data.get("descripcion", ""), data.get("categoria", "Normal"))
         )
         conn.commit()
         return jsonify({"message": "Incidencia creada."}), 201
