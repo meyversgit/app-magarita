@@ -6,7 +6,7 @@ async function init() {
   console.log("Iniciando panel de residente...", currentUser);
   if (!currentUser) {
     console.warn("No hay usuario en session, redirigiendo...");
-    window.location.href = 'trabajo final margarita-jose luis/Login.html';
+    window.location.href = 'login.html';
     return;
   }
   
@@ -377,7 +377,7 @@ function confirmLogout() {
     confirmAction('¿Cerrar sesión?', 'Tu sesión será cerrada y serás redirigido al inicio.', () => {
         sessionStorage.removeItem('condoUser');
         showToast('success', 'Sesión cerrada', 'Hasta pronto.');
-        setTimeout(() => window.location.href = 'trabajo final margarita-jose luis/Login.html', 1000);
+        setTimeout(() => window.location.href = 'login.html', 1000);
     }); 
 }
 

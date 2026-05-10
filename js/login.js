@@ -52,9 +52,9 @@ async function doLogin() {
       
       setTimeout(() => { 
         if (data.user.rol === 'admin') {
-          window.location.href = 'paneladmin.html';
+          window.location.href = 'admin.html';
         } else {
-          window.location.href = '../residente-panel.html';
+          window.location.href = 'residente.html';
         }
       }, 800);
     } else {
