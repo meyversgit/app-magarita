@@ -475,59 +475,96 @@ function updateNotifPreview() { /* live preview placeholder */ }
 let currentIncidenciaId = null;
 
 async function loadIncidencias() {
-  const container = document.querySelector('#panel-lista-incidencias > div:last-child');
+  const container = document.getElementById('inc-lista-container');
   if (!container) return;
-  container.innerHTML = '<div style="padding:24px;text-align:center;color:#8a9ab5;">Cargando...</div>';
+  container.innerHTML = '<div style="padding:24px;text-align:center;color:#8a9ab5;">Cargando incidencias...</div>';
+  
   try {
     const res  = await fetch(API + '/api/incidencias');
     const data = await res.json();
-    if (!data.length) {
+    
+    if (!data || !data.length) {
       container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">No hay incidencias registradas.</div>';
       return;
     }
-    const prioColor   = { 'alta':'#fad0d0', 'normal':'#dde5ef', 'baja':'#dde5ef', 'plomeria':'#dde5ef', 'electricidad':'#dde5ef', 'seguridad':'#dde5ef', 'limpieza':'#dde5ef' };
+
     const estadoBadge = { 'abierta':'badge-red', 'en_proceso':'badge-yellow', 'resuelta':'badge-green', 'cerrada':'badge-gray' };
     const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'🔧', 'resuelta':'✅', 'cerrada':'📁' };
     const iconBg      = { 'abierta':'#fff0f0', 'en_proceso':'#fff8e6', 'resuelta':'#e6f7ee', 'cerrada':'#f0f4f9' };
+    const prioBorder  = { 'Alta':'#fad0d0', 'Media':'#ffe99a', 'Baja':'#dde5ef' };
+    
     const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : '—';
-    container.innerHTML = data.map(inc => `
-      <div style="background:#fff;border-radius:12px;border:0.5px solid ${prioColor[inc.Prioridad]||'#dde5ef'};padding:20px;cursor:pointer;margin-bottom:12px;"
+
+    container.innerHTML = data.map(inc => {
+      const bColor = prioBorder[inc.Prioridad] || '#dde5ef';
+      const status = inc.Estado || 'abierta';
+      
+      return `
+      <div style="background:#fff;border-radius:12px;border:0.5px solid ${bColor};padding:20px;cursor:pointer;margin-bottom:12px;"
         onclick="abrirDetalleIncidencia(${inc.IdIncidencia})"
         onmouseover="this.style.boxShadow='0 4px 16px rgba(15,45,82,0.09)'"
         onmouseout="this.style.boxShadow='none'">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:42px;height:42px;background:${iconBg[inc.Estado]||'#f0f4f9'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">${estadoIcon[inc.Estado]||'📋'}</div>
+            <div style="width:42px;height:42px;background:${iconBg[status]||'#f0f4f9'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">${estadoIcon[status]||'📋'}</div>
             <div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
                 <div style="font-size:14px;font-weight:700;color:#0f2d52;">${inc.Titulo}</div>
-                <span class="badge ${estadoBadge[inc.Estado]||'badge-gray'}">${cap(inc.Estado)}</span>
+                <span class="badge ${estadoBadge[status]||'badge-gray'}">${cap(status)}</span>
               </div>
-              <div style="font-size:12.5px;color:#8a9ab5;">${inc.Ubicacion?'📍 '+inc.Ubicacion+' · ':''}${inc.FechaReporte?new Date(inc.FechaReporte).toLocaleString('es-DO'):''}</div>
+              <div style="font-size:12.5px;color:#8a9ab5;">
+                Reportado por: <strong>${inc.ResidenteNombre || 'Anónimo'}</strong> · Apto ${inc.Apartamento || '—'}
+                <br>
+                <span style="font-size:11.5px;">📍 ${inc.Ubicacion || 'No especificada'} · 📅 ${inc.FechaReporte ? new Date(inc.FechaReporte).toLocaleString('es-DO') : ''}</span>
+              </div>
             </div>
           </div>
           <button class="btn-secondary btn-sm" onclick="event.stopPropagation();abrirDetalleIncidencia(${inc.IdIncidencia})">Ver detalle →</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch(e) {
-    container.innerHTML = `<div style="background:#fff;border-radius:12px;padding:24px;text-align:center;color:#c0392b;">Error al cargar: ${e.message}</div>`;
+    console.error("Error al cargar incidencias:", e);
+    container.innerHTML = `<div style="background:#fff;border-radius:12px;padding:24px;text-align:center;color:#c0392b;">Error al conectar con el servidor.</div>`;
   }
 }
 
 async function abrirDetalleIncidencia(id) {
   currentIncidenciaId = id;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  
   try {
     const res  = await fetch(API + '/api/incidencias');
     const list = await res.json();
     const inc  = list.find(x => x.IdIncidencia === id);
+    
     if (inc) {
-      const icon = inc.Estado === 'Abierta' ? '🚨' : inc.Estado === 'En proceso' ? '🔧' : '✅';
-      const titleEl = document.querySelector('#panel-detalle-incidencia [style*="font-size:16px"]');
-      const headEl  = document.querySelector('#panel-detalle-incidencia [style*="font-size:20px;font-weight:700;"]');
-      if (titleEl) titleEl.textContent = icon + ' ' + inc.Titulo;
-      if (headEl)  headEl.textContent  = 'Detalle de Incidencia #INC-' + String(id).padStart(3, '0');
+      const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'🔧', 'resuelta':'✅', 'cerrada':'📁' };
+      const estadoBadge = { 'abierta':'badge-red', 'en_proceso':'badge-yellow', 'resuelta':'badge-green', 'cerrada':'badge-gray' };
+      const iconBg      = { 'abierta':'#fff0f0', 'en_proceso':'#fff8e6', 'resuelta':'#e6f7ee', 'cerrada':'#f0f4f9' };
+      const border      = { 'Alta':'#fad0d0', 'Media':'#ffe99a', 'Baja':'#dde5ef' };
+      const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : '—';
+
+      set('inc-detalle-num', 'Detalle de Incidencia #INC-' + String(id).padStart(3, '0'));
+      set('inc-detalle-titulo', (estadoIcon[inc.Estado]||'📋') + ' ' + inc.Titulo);
+      set('inc-detalle-reportado', (inc.ResidenteNombre || 'Anónimo') + ' · Apto ' + (inc.Apartamento || '—'));
+      set('inc-detalle-fecha', inc.FechaReporte ? new Date(inc.FechaReporte).toLocaleString('es-DO') : '—');
+      set('inc-detalle-ubicacion', inc.Ubicacion || 'No especificada');
+      set('inc-detalle-prioridad', inc.Prioridad || 'Normal');
+      set('inc-detalle-descripcion', inc.Descripcion || 'Sin descripción detallada.');
+      
+      const badge = document.getElementById('inc-detalle-badge');
+      if (badge) {
+        badge.textContent = cap(inc.Estado);
+        badge.className = 'badge ' + (estadoBadge[inc.Estado] || 'badge-gray');
+      }
+      
+      const card = document.getElementById('inc-detalle-card');
+      if (card) {
+        card.style.borderColor = border[inc.Prioridad] || '#dde5ef';
+      }
     }
-  } catch(e) { /* silent */ }
+  } catch(e) { console.error("Error al cargar detalle:", e); }
   showPanel('detalle-incidencia', null, 'incidencias');
 }
 

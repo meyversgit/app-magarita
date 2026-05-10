@@ -46,14 +46,17 @@ async function doLogin() {
     });
     const data = await res.json();
     if (res.ok) {
-      if (data.user.rol !== 'admin') {
-        setAlert('login-alert', 'Acceso restringido: Esta cuenta no es de administrador.', 'error');
-        return;
-      }
-      // Save user info for the admin panel profile
+      // Save user info
       sessionStorage.setItem('condoUser', JSON.stringify(data.user));
       setAlert('login-alert', '¡Inicio de sesión exitoso!', 'success');
-      setTimeout(() => { window.location.href = 'paneladmin.html'; }, 800);
+      
+      setTimeout(() => { 
+        if (data.user.rol === 'admin') {
+          window.location.href = 'paneladmin.html';
+        } else {
+          window.location.href = '../residente-panel.html';
+        }
+      }, 800);
     } else {
       setAlert('login-alert', data.message || 'Credenciales incorrectas.', 'error');
     }

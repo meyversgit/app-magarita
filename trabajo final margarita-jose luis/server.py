@@ -29,7 +29,7 @@ def row_to_dict(row, cursor):
 def serial(o):
     if isinstance(o, (datetime.datetime, datetime.date)): return o.isoformat()
     if isinstance(o, decimal.Decimal): return float(o)
-    raise TypeError
+    return str(o)
 
 def ok(data, status=200):
     return app.response_class(json.dumps(data, default=serial), status=status, mimetype='application/json')
@@ -51,8 +51,21 @@ def register():
         conn = get_db(); c = conn.cursor()
         c.execute("SELECT id FROM usuario WHERE email=?", (correo,))
         if c.fetchone(): return jsonify({"message": "Ya existe una cuenta con ese correo."}), 409
-        c.execute("INSERT INTO usuario (nombre,apellido,email,telefono,password_hash,rol,activo,created_at) VALUES(?,?,?,?,?, 'residente',1,GETDATE())",
+        c.execute("INSERT INTO usuario (nombre,apellido,email,telefono,password_hash,rol,activo,created_at) OUTPUT INSERTED.id VALUES(?,?,?,?,?, 'residente',1,GETDATE())",
                   (nombre, apellido, correo, telefono, pwd))
+        row = c.fetchone()
+        if not row: return jsonify({"message": "Error al crear usuario"}), 500
+        uid = row[0]
+        
+        # Obtener un apartamento disponible o el primero
+        c.execute("SELECT TOP 1 id FROM apartamento")
+        apt_row = c.fetchone()
+        if not apt_row: return jsonify({"message": "No hay apartamentos registrados. Contacte al admin."}), 500
+        apto_id = apt_row[0]
+        
+        c.execute("INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario) VALUES (?, ?, GETDATE(), 0)",
+                  (uid, apto_id))
+        
         conn.commit()
         return jsonify({"message": "Cuenta creada exitosamente."}), 201
     except Exception as e:
@@ -70,11 +83,12 @@ def login():
     conn = None
     try:
         conn = get_db(); c = conn.cursor()
-        c.execute("SELECT nombre,apellido,password_hash,rol,email,created_at FROM usuario WHERE email=?", (correo,))
+        c.execute("SELECT id, nombre, apellido, password_hash, rol, email, created_at FROM usuario WHERE email=?", (correo,))
         row = c.fetchone()
         if not row or row.password_hash != pwd:
             return jsonify({"message": "Correo o contraseña incorrectos."}), 401
         return ok({"message": "Sesion iniciada.", "user": {
+            "id": row.id,
             "nombre": row.nombre, "apellido": row.apellido,
             "email": row.email, "rol": row.rol, "fechaRegistro": row.created_at
         }})
@@ -334,20 +348,220 @@ def update_usuario(id):
     finally:
         if conn: conn.close()
 
+# ── RESIDENTE SPECIFIC ────────────────────────────────────────
+
+@app.route("/api/residente/data/<int:user_id>", methods=["GET"])
+def get_residente_data(user_id):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        # Info básica
+        c.execute("""SELECT r.id AS IdResidente, u.nombre AS Nombre, u.apellido AS Apellido, 
+                            u.email AS Email, u.telefono AS Telefono, a.numero AS Apartamento, 
+                            a.piso AS Piso, u.activo AS Activo, r.fecha_ingreso AS FechaIngreso
+                     FROM residente r 
+                     JOIN usuario u ON r.usuario_id = u.id
+                     JOIN apartamento a ON r.apartamento_id = a.id
+                     WHERE u.id = ?""", (user_id,))
+        row = c.fetchone()
+        if not row:
+            # Si no hay residente asociado, devolver info del usuario
+            c.execute("SELECT id AS IdUsuario, nombre AS Nombre, apellido AS Apellido, email AS Email, rol AS Rol FROM usuario WHERE id=?", (user_id,))
+            u_row = c.fetchone()
+            return ok(row_to_dict(u_row, c)) if u_row else (jsonify({"message":"Usuario no encontrado"}), 404)
+        
+        res_info = row_to_dict(row, c)
+        rid = res_info['IdResidente']
+        
+        # Stats
+        c.execute("SELECT COUNT(*) FROM pago WHERE residente_id=? AND estado='pendiente'", (rid,))
+        pagos_pend = c.fetchone()[0]
+        
+        c.execute("SELECT SUM(monto_pagado) FROM pago WHERE residente_id=? AND estado='pagado'", (rid,))
+        total_pagado = float(c.fetchone()[0] or 0)
+        
+        c.execute("SELECT COUNT(*) FROM incidencia WHERE residente_id=? AND estado IN ('abierta', 'en_proceso')", (rid,))
+        inc_activas = c.fetchone()[0]
+        
+        # Reservas (mock por ahora si no hay tabla, o usar tabla si existe)
+        # c.execute("SELECT COUNT(*) FROM reserva WHERE residente_id=? AND fecha >= GETDATE()", (rid,))
+        # reservas = c.fetchone()[0]
+        
+        res_info['stats'] = {
+            'pagosPendientes': pagos_pend,
+            'totalPagadoAnio': total_pagado,
+            'incidenciasActivas': inc_activas,
+            'reservasActivas': 0 # Mock
+        }
+        
+        return ok(res_info)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/pagos/<int:user_id>", methods=["GET"])
+def get_residente_pagos(user_id):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("""SELECT p.id AS IdPago, ISNULL(cm.descripcion,'Mantenimiento') AS Concepto, 
+                            p.monto_pagado AS Monto, p.metodo_pago AS MetodoPago, 
+                            p.fecha_pago AS FechaPago, p.estado AS Estado, p.comprobante_url AS Referencia
+                     FROM pago p
+                     JOIN residente r ON p.residente_id = r.id
+                     LEFT JOIN cuota_mantenimiento cm ON p.cuota_id = cm.id
+                     WHERE r.usuario_id = ?
+                     ORDER BY p.fecha_pago DESC""", (user_id,))
+        return ok(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/incidencias/<int:user_id>", methods=["GET"])
+def get_residente_incidencias(user_id):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("""SELECT i.id AS IdIncidencia, i.titulo AS Titulo, i.descripcion AS Descripcion,
+                            i.categoria AS Categoria, i.estado AS Estado, i.fecha_reporte AS FechaReporte
+                     FROM incidencia i
+                     JOIN residente r ON i.residente_id = r.id
+                     WHERE r.usuario_id = ?
+                     ORDER BY i.fecha_reporte DESC""", (user_id,))
+        return ok(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 # ── NOTIFICACIONES ────────────────────────────────────────────
 
-@app.route("/api/notificaciones", methods=["GET"])
-def get_notificaciones():
+@app.route("/api/notificaciones/<int:user_id>", methods=["GET"])
+def get_notificaciones(user_id):
     conn = None
     try:
         conn = get_db(); c = conn.cursor()
         c.execute("""SELECT id AS IdNotificacion, usuario_id AS UsuarioId,
                      titulo AS Titulo, mensaje AS Mensaje, tipo AS Tipo,
                      leida AS Leida, fecha_envio AS FechaCreacion
-                     FROM notificacion ORDER BY fecha_envio DESC""")
+                     FROM notificacion 
+                     WHERE usuario_id IS NULL OR usuario_id = ?
+                     ORDER BY fecha_envio DESC""", (user_id,))
         return ok(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/actividad/<int:user_id>", methods=["GET"])
+def get_residente_actividad(user_id):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        # Traer últimos 2 pagos y últimas 2 incidencias
+        c.execute("""SELECT 'pago' AS Clase, ISNULL(cm.descripcion, 'Mantenimiento') AS Titulo, 
+                            p.monto_pagado AS Monto, p.estado AS Estado, p.fecha_pago AS Fecha
+                     FROM pago p
+                     JOIN residente r ON p.residente_id = r.id
+                     LEFT JOIN cuota_mantenimiento cm ON p.cuota_id = cm.id
+                     WHERE r.usuario_id = ?
+                     ORDER BY p.fecha_pago DESC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY""", (user_id,))
+        pagos = rows_to_list(c.fetchall(), c)
+        
+        c.execute("""SELECT 'incidencia' AS Clase, i.titulo AS Titulo, 
+                            i.descripcion AS Mensaje, i.estado AS Estado, i.fecha_reporte AS Fecha
+                     FROM incidencia i
+                     JOIN residente r ON i.residente_id = r.id
+                     WHERE r.usuario_id = ?
+                     ORDER BY i.fecha_reporte DESC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY""", (user_id,))
+        incs = rows_to_list(c.fetchall(), c)
+        
+        return ok({"pagos": pagos, "incidencias": incs})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/incidencia", methods=["POST"])
+def post_residente_incidencia():
+    conn = None
+    try:
+        data = request.json
+        uid = data.get('usuario_id')
+        titulo = data.get('titulo')
+        desc = data.get('descripcion')
+        cat = data.get('categoria')
+        prio = data.get('prioridad', 'Baja')
+        ubi = data.get('ubicacion', 'No especificada')
+        
+        if not uid: return jsonify({"message": "ID de usuario inválido o sesión expirada"}), 401
+        
+        conn = get_db(); c = conn.cursor()
+        # Obtener id del residente
+        c.execute("SELECT id FROM residente WHERE usuario_id=?", (uid,))
+        row = c.fetchone()
+        
+        if not row:
+            # Auto-crear residente si no existe
+            c.execute("SELECT TOP 1 id FROM apartamento")
+            apt_row = c.fetchone()
+            if not apt_row: return jsonify({"message": "No hay apartamentos disponibles"}), 500
+            apto_id = apt_row[0]
+            
+            c.execute("INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario) OUTPUT INSERTED.id VALUES (?, ?, GETDATE(), 0)",
+                      (uid, apto_id))
+            rid = c.fetchone()[0]
+        else:
+            rid = row[0]
+        
+        c.execute("""INSERT INTO incidencia (residente_id, titulo, descripcion, categoria, prioridad, ubicacion, estado, fecha_reporte)
+                     VALUES (?, ?, ?, ?, ?, ?, 'abierta', GETDATE())""", (rid, titulo, desc, cat, prio, ubi))
+        conn.commit()
+        return jsonify({"message": "Incidencia reportada exitosamente"}), 201
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/reserva", methods=["POST"])
+def post_residente_reserva():
+    conn = None
+    try:
+        data = request.json
+        uid = data.get('usuario_id')
+        area = data.get('area')
+        fecha = data.get('fecha')
+        hora = data.get('hora')
+        
+        if not uid: return jsonify({"message": "ID de usuario inválido o sesión expirada"}), 401
+        
+        conn = get_db(); c = conn.cursor()
+        c.execute("SELECT id FROM residente WHERE usuario_id=?", (uid,))
+        row = c.fetchone()
+        
+        if not row:
+            # Auto-crear residente si no existe
+            c.execute("SELECT TOP 1 id FROM apartamento")
+            apt_row = c.fetchone()
+            if not apt_row: return jsonify({"message": "No hay apartamentos disponibles"}), 500
+            apto_id = apt_row[0]
+            
+            c.execute("INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario) OUTPUT INSERTED.id VALUES (?, ?, GETDATE(), 0)",
+                      (uid, apto_id))
+            rid = c.fetchone()[0]
+        else:
+            rid = row[0]
+        
+        # Asumimos que existe una tabla reserva
+        c.execute("""INSERT INTO reserva (residente_id, area_comun, fecha_reserva, hora_inicio, estado)
+                     VALUES (?, ?, ?, ?, 'pendiente')""", (rid, area, fecha, hora))
+        conn.commit()
+        return jsonify({"message": "Solicitud de reserva enviada"}), 201
+    except Exception as e:
+        # Si no existe la tabla reserva, crearla o manejar el error
+        return jsonify({"message": f"Error al reservar: {str(e)}"}), 500
     finally:
         if conn: conn.close()
 
@@ -396,12 +610,19 @@ def get_incidencias():
     conn = None
     try:
         conn = get_db(); c = conn.cursor()
-        c.execute("""SELECT id AS IdIncidencia, residente_id AS ResidenteId,
-                     titulo AS Titulo, descripcion AS Descripcion,
-                     categoria AS Prioridad, estado AS Estado,
-                     fecha_reporte AS FechaReporte,
-                     fecha_actualizacion AS FechaActualizacion
-                     FROM incidencia ORDER BY fecha_reporte DESC""")
+        c.execute("""SELECT i.id AS IdIncidencia, i.residente_id AS ResidenteId,
+                     i.titulo AS Titulo, i.descripcion AS Descripcion,
+                     i.categoria AS Categoria, i.prioridad AS Prioridad,
+                     i.ubicacion AS Ubicacion, i.estado AS Estado,
+                     i.fecha_reporte AS FechaReporte,
+                     i.fecha_actualizacion AS FechaActualizacion,
+                     u.nombre + ' ' + u.apellido AS ResidenteNombre,
+                     a.numero AS Apartamento
+                     FROM incidencia i
+                     LEFT JOIN residente r ON i.residente_id = r.id
+                     LEFT JOIN usuario u ON r.usuario_id = u.id
+                     LEFT JOIN apartamento a ON r.apartamento_id = a.id
+                     ORDER BY i.fecha_reporte DESC""")
         return ok(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500

@@ -612,7 +612,7 @@
           <button class="btn-primary" onclick="showPanel('crear-incidencia',null,'incidencias')">+ Crear incidencia</button>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:12px;" id="inc-lista-container">
         <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:20px;cursor:pointer;" onclick="showPanel('detalle-incidencia',null,'incidencias')" onmouseover="this.style.boxShadow='0 4px 16px rgba(192,57,43,0.1)'" onmouseout="this.style.boxShadow='none'">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:12px;">
@@ -653,27 +653,27 @@
     </div>
 
     <!-- ========== DETALLE INCIDENCIA ========== -->
-    <div id="panel-detalle-incidencia" class="panel">
+      <div id="panel-detalle-incidencia" class="panel">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
         <button class="btn-secondary btn-sm" onclick="showPanel('lista-incidencias',null,'incidencias')">← Volver</button>
-        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Detalle de Incidencia #INC-042</div>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;" id="inc-detalle-num">Detalle de Incidencia</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
         <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:24px;">
+          <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:24px;" id="inc-detalle-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div style="font-size:16px;font-weight:700;color:#c0392b;">🚨 Fuga de agua – Pasillo 2do piso</div>
-              <span class="badge badge-red">Urgente</span>
+              <div style="font-size:16px;font-weight:700;color:#c0392b;" id="inc-detalle-titulo">🚨 Fuga de agua – Pasillo 2do piso</div>
+              <span class="badge badge-red" id="inc-detalle-badge">Urgente</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13.5px;color:#4a5a72;">
-              <div><strong style="color:#1a2a3a;">Reportado por:</strong> María García · Apto 4B</div>
-              <div><strong style="color:#1a2a3a;">Fecha:</strong> 26/04/2026 · 14:32</div>
-              <div><strong style="color:#1a2a3a;">Ubicación:</strong> Pasillo 2do piso, ala norte</div>
-              <div><strong style="color:#1a2a3a;">Prioridad:</strong> Alta</div>
+              <div><strong style="color:#1a2a3a;">Reportado por:</strong> <span id="inc-detalle-reportado">Cargando...</span></div>
+              <div><strong style="color:#1a2a3a;">Fecha:</strong> <span id="inc-detalle-fecha">--/--/----</span></div>
+              <div><strong style="color:#1a2a3a;">Ubicación:</strong> <span id="inc-detalle-ubicacion">No especificada</span></div>
+              <div><strong style="color:#1a2a3a;">Prioridad:</strong> <span id="inc-detalle-prioridad">Normal</span></div>
             </div>
             <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid #eef1f6;font-size:13.5px;color:#4a5a72;">
               <strong style="color:#1a2a3a;display:block;margin-bottom:6px;">Descripción:</strong>
-              Se detectó fuga de agua en el pasillo del 2do piso, ala norte. El agua proviene aparentemente de la tubería del apartamento 2C. Ya ha mojado parte del corredor y puede afectar el apartamento inferior.
+              <div id="inc-detalle-descripcion" style="line-height:1.5;">Cargando descripción...</div>
             </div>
             <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid #eef1f6;">
               <strong style="font-size:13px;color:#1a2a3a;display:block;margin-bottom:10px;">Actualizar estado:</strong>
