@@ -402,10 +402,26 @@ def get_residente_data(user_id):
                      WHERE u.id = ?""", (user_id,))
         row = c.fetchone()
         if not row:
-            # Si no hay residente asociado, devolver info del usuario
-            c.execute("SELECT id AS IdUsuario, nombre AS Nombre, apellido AS Apellido, email AS Email, rol AS Rol FROM usuario WHERE id=?", (user_id,))
-            u_row = c.fetchone()
-            return ok(row_to_dict(u_row, c)) if u_row else (jsonify({"message":"Usuario no encontrado"}), 404)
+            # Auto-crear residente si no existe
+            c.execute("SELECT TOP 1 id FROM apartamento")
+            apt_row = c.fetchone()
+            apto_id = apt_row[0] if apt_row else 1
+            
+            c.execute("INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario) OUTPUT INSERTED.id VALUES (?, ?, GETDATE(), 0)",
+                      (user_id, apto_id))
+            rid = c.fetchone()[0]
+            conn.commit()
+
+            
+            # Refetch
+            c.execute("""SELECT r.id AS IdResidente, u.nombre AS Nombre, u.apellido AS Apellido, 
+                                u.email AS Email, u.telefono AS Telefono, a.numero AS Apartamento, 
+                                a.piso AS Piso, u.activo AS Activo, r.fecha_ingreso AS FechaIngreso
+                         FROM residente r 
+                         JOIN usuario u ON r.usuario_id = u.id
+                         JOIN apartamento a ON r.apartamento_id = a.id
+                         WHERE u.id = ?""", (user_id,))
+            row = c.fetchone()
         
         res_info = row_to_dict(row, c)
         rid = res_info['IdResidente']
@@ -717,7 +733,69 @@ def marcar_leida(id):
     finally:
         if conn: conn.close()
 
-# ── INCIDENCIAS ───────────────────────────────────────────────
+# ── PERFIL Y PAGOS ───────────────────────────────────────────
+
+@app.route("/api/residente/perfil/<int:uid>", methods=["GET", "PUT"])
+def manage_perfil(uid):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        if request.method == "GET":
+            c.execute("SELECT id FROM residente WHERE usuario_id=?", (uid,))
+            if not c.fetchone():
+                c.execute("SELECT TOP 1 id FROM apartamento")
+                apt_row = c.fetchone()
+                if apt_row:
+                    c.execute("INSERT INTO residente (usuario_id, apartamento_id, fecha_ingreso, propietario) VALUES (?, ?, GETDATE(), 0)", (uid, apt_row[0]))
+                    conn.commit()
+            
+            c.execute("SELECT nombre, apellido, email, telefono FROM usuario WHERE id=?", (uid,))
+            row = c.fetchone()
+            if not row: return jsonify({"message": "Usuario no encontrado"}), 404
+            return jsonify({
+                "nombre": row[0], "apellido": row[1], "email": row[2], "telefono": row[3]
+            })
+        else:
+            data = request.get_json(silent=True) or {}
+            c.execute("""UPDATE usuario SET nombre=?, apellido=?, email=?, telefono=? WHERE id=?""",
+                      (data.get('nombre'), data.get('apellido'), data.get('email'), data.get('telefono'), uid))
+            conn.commit()
+            return jsonify({"message": "Perfil actualizado correctamente"})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route("/api/residente/pago", methods=["POST"])
+def submit_pago():
+    conn = None
+    try:
+        data = request.get_json(silent=True) or {}
+        uid = data.get('usuario_id')
+        monto = data.get('monto')
+        metodo = data.get('metodo')
+        ref = data.get('referencia')
+        
+        conn = get_db(); c = conn.cursor()
+        c.execute("SELECT id FROM residente WHERE usuario_id=?", (uid,))
+        row = c.fetchone()
+        if not row:
+            return jsonify({"message": "Perfil de residente no encontrado."}), 404
+        rid = row[0]
+        
+        c.execute("SELECT TOP 1 id FROM cuota_mantenimiento")
+        cuota_row = c.fetchone()
+        cuota_id = cuota_row[0] if cuota_row else 1
+        
+        c.execute("""INSERT INTO pago (residente_id, cuota_id, monto_pagado, fecha_pago, metodo_pago, comprobante_url, estado) 
+                     VALUES (?, ?, ?, GETDATE(), ?, ?, 'pendiente')""", (rid, cuota_id, monto, metodo, ref))
+        conn.commit()
+        return jsonify({"message": "Pago registrado correctamente. Pendiente de verificación."})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 @app.route("/api/incidencias", methods=["GET"])
 def get_incidencias():

@@ -21,6 +21,7 @@ async function init() {
     loadResidentDashboard();
     loadResidentProfile();
     loadAnuncios();
+    loadNotificaciones();
     renderCalendar();
    } catch (err) {
     console.error("Error en la inicialización:", err);
@@ -188,23 +189,48 @@ async function loadRecentActivity() {
 }
 
 async function loadResidentProfile() {
-    const data = residentData || { 
-        Nombre: currentUser.nombre?.split(' ')[0] || '', 
-        Apellido: currentUser.nombre?.split(' ').slice(1).join(' ') || '',
-        Email: currentUser.email
+    try {
+        const res = await fetch(`${API}/api/residente/perfil/${currentUser.id}`);
+        const data = await res.json();
+        if (!res.ok) return;
+
+        const map = {
+            'input-nombre':   data.nombre,
+            'input-apellido': data.apellido,
+            'input-telefono': data.telefono || '',
+            'input-email':    data.email
+        };
+        for (const [id, val] of Object.entries(map)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val || '';
+        }
+    } catch (e) { console.error("Error al cargar perfil:", e); }
+}
+
+async function updateResidentProfile() {
+    const data = {
+        nombre:   document.getElementById('input-nombre').value,
+        apellido: document.getElementById('input-apellido').value,
+        telefono: document.getElementById('input-telefono').value,
+        email:    document.getElementById('input-email').value
     };
-    console.log("Cargando perfil con:", data);
-    const map = {
-        'input-nombre':   data.Nombre,
-        'input-apellido': data.Apellido,
-        'input-cedula':   data.Cedula || '',
-        'input-telefono': data.Telefono || '',
-        'input-email':    data.Email
-    };
-    for (const [id, val] of Object.entries(map)) {
-        const el = document.getElementById(id);
-        if (el) el.value = val || '';
-    }
+    try {
+        const res = await fetch(`${API}/api/residente/perfil/${currentUser.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            showToast('success', 'Perfil actualizado', 'Tus datos fueron guardados correctamente.');
+            // Actualizar sesión local
+            currentUser.nombre = `${data.nombre} ${data.apellido}`;
+            currentUser.email = data.email;
+            sessionStorage.setItem('condoUser', JSON.stringify(currentUser));
+            loadResidentBaseData(); // Refresh UI names
+        } else {
+            showToast('error', 'Error', 'No se pudo actualizar el perfil.');
+        }
+    } catch (e) { showToast('error', 'Error', 'Sin conexión con el servidor.'); }
 }
 
 async function loadResidentPagos() {
@@ -222,8 +248,8 @@ async function loadResidentPagos() {
         tbody.innerHTML = data.map(p => `
             <tr>
                 <td style="color:#8a9ab5;">#${String(p.IdPago).padStart(4, '0')}</td>
-                <td>${p.Concepto}</td>
-                <td style="font-weight:600;">RD$${p.Monto.toLocaleString()}</td>
+                <td>${p.Concepto || 'Mantenimiento Mensual'}</td>
+                <td style="font-weight:600;">RD$${(p.Monto || 0).toLocaleString()}</td>
                 <td>${p.MetodoPago || '—'}</td>
                 <td style="color:#8a9ab5;">${p.Referencia || '—'}</td>
                 <td>${p.FechaPago ? new Date(p.FechaPago).toLocaleDateString() : '—'}</td>
@@ -343,6 +369,35 @@ function selectArea(area, el) {
     el.classList.add('sel');
     el.style.borderColor = '#3b9eff';
     el.style.background = '#f0f7ff';
+}
+
+async function submitPago() {
+    const data = {
+        usuario_id: currentUser.id,
+        monto: 4500, // Monto estático por ahora o dinámico si tienes cuotas
+        metodo: document.getElementById('pay-method').value,
+        referencia: document.getElementById('pay-ref').value,
+        fecha: document.getElementById('pay-date').value
+    };
+    
+    if (!data.metodo || !data.referencia) {
+        showToast('error', 'Campos incompletos', 'Ingresa el método y la referencia del pago.');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API}/api/residente/pago`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            showToast('success', 'Pago enviado', 'Tu pago ha sido registrado y está en verificación.');
+            showPanel('historial-pagos', null, 'pagos');
+        } else {
+            showToast('error', 'Error', 'No se pudo registrar el pago.');
+        }
+    } catch (e) { showToast('error', 'Error', 'Sin conexión con el servidor.'); }
 }
 
 async function submitReserva() {
@@ -529,6 +584,104 @@ window.showPanel = function(id, navBtn, menuId) {
     if (id === 'mis-reservas') loadResidentReservas();
     if (id === 'anuncios') loadAnuncios();
 };
+
+// ── PROFILE MODAL ─────────────────────────────────────────────
+function openProfileModal() {
+  if (residentData || currentUser) {
+    const initials = document.querySelector('.avatar').textContent;
+    document.getElementById('profile-avatar-modal').textContent = initials;
+    const fName = residentData ? `${residentData.Nombre || ''} ${residentData.Apellido || ''}`.trim() : currentUser.nombre;
+    document.getElementById('profile-nombre-modal').textContent = fName;
+    document.getElementById('profile-email-modal').textContent = residentData?.Email || currentUser?.email || '';
+    const aptoStr = residentData?.Apartamento ? `Apto ${residentData.Apartamento}` : 'Sin apartamento';
+    document.getElementById('profile-rol-modal').textContent = aptoStr;
+    if (residentData?.FechaIngreso) {
+      document.getElementById('profile-fecha-modal').textContent =
+        new Date(residentData.FechaIngreso).toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
+    }
+  }
+  document.getElementById('profile-modal-overlay').classList.add('open');
+}
+
+function closeProfileModal() {
+  document.getElementById('profile-modal-overlay').classList.remove('open');
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────
+let allNotificaciones = [];
+
+async function loadNotificaciones() {
+  try {
+    const res = await fetch(`${API}/api/notificaciones/${currentUser.id}`);
+    allNotificaciones = await res.json();
+    renderNotifDropdown();
+  } catch(e) {
+    const list = document.getElementById('notif-list');
+    if (list) list.innerHTML = '<div style="padding:16px;text-align:center;color:#c0392b;font-size:12.5px;">No se pudo conectar con el servidor.</div>';
+  }
+}
+
+function renderNotifDropdown() {
+  const list  = document.getElementById('notif-list');
+  const badge = document.getElementById('notif-badge');
+  if (!list || !badge) return;
+  const unread = allNotificaciones.filter(n => !n.Leida);
+  badge.textContent = unread.length;
+  badge.style.display = unread.length > 0 ? 'flex' : 'none';
+  if (!allNotificaciones.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:#8a9ab5;font-size:13px;">No hay notificaciones.</div>';
+    return;
+  }
+  const tipoColor = { general:'#3b9eff', urgente:'#e24b4a', mantenimiento:'#b07800', evento:'#0d7d45', cobro:'#534ab7' };
+  list.innerHTML = allNotificaciones.map(n => `
+    <div id="notif-item-${n.IdNotificacion}" onclick="marcarLeida(${n.IdNotificacion})"
+      style="padding:14px 18px;border-bottom:0.5px solid #eef1f6;cursor:pointer;background:${n.Leida?'#fff':'#f5f9ff'};transition:background 0.15s;"
+      onmouseover="this.style.background='#f0f4f9'" onmouseout="this.style.background='${n.Leida?'#fff':'#f5f9ff'}'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${n.Leida?'transparent':'#3b9eff'};flex-shrink:0;"></span>
+        <div style="font-size:13px;font-weight:${n.Leida?'500':'700'};color:#0f2d52;flex:1;">${n.Titulo}</div>
+        <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${(tipoColor[n.Tipo]||'#8a9ab5')}22;color:${tipoColor[n.Tipo]||'#8a9ab5'};font-weight:600;">${n.Tipo}</span>
+      </div>
+      <div style="font-size:12px;color:#6b7c93;padding-left:16px;">${(n.Mensaje||'').substring(0,80)}${n.Mensaje&&n.Mensaje.length>80?'...':''}</div>
+      <div style="font-size:11px;color:#aab4c2;margin-top:4px;padding-left:16px;">${n.FechaCreacion?new Date(n.FechaCreacion).toLocaleString('es-DO'):''}</div>
+    </div>`).join('');
+}
+
+async function marcarLeida(id) {
+  try {
+    await fetch(`${API}/api/notificaciones/${id}/leer`, { method: 'PUT' });
+    const n = allNotificaciones.find(x => x.IdNotificacion === id);
+    if (n) n.Leida = true;
+    renderNotifDropdown();
+  } catch(e) { console.error(e); }
+}
+
+async function marcarTodasLeidas() {
+  for (const n of allNotificaciones.filter(n => !n.Leida)) {
+    await fetch(`${API}/api/notificaciones/${n.IdNotificacion}/leer`, { method: 'PUT' });
+    n.Leida = true;
+  }
+  renderNotifDropdown();
+  showToast('success', 'Notificaciones', 'Todas marcadas como leídas.');
+}
+
+function toggleNotifDropdown() {
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) dd.style.display = dd.style.display === 'none' || dd.style.display === '' ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('profile-modal-overlay')?.addEventListener('click', function(e) {
+    if (e.target === this) closeProfileModal();
+  });
+  document.addEventListener('click', function(e) {
+    const wrapper = document.getElementById('notif-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      const dd = document.getElementById('notif-dropdown');
+      if (dd) dd.style.display = 'none';
+    }
+  });
+});
 
 init();
 
