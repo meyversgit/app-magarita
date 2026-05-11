@@ -132,6 +132,7 @@ def dashboard():
     finally:
         if conn: conn.close()
 
+@app.route("/api/reservas/", methods=["GET"])
 @app.route("/api/reservas", methods=["GET"])
 def get_reservas_admin():
     conn = None
@@ -148,7 +149,7 @@ def get_reservas_admin():
                      LEFT JOIN usuario u ON res.usuario_id = u.id
                      LEFT JOIN apartamento a ON res.apartamento_id = a.id
                      ORDER BY r.fecha DESC""")
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -189,7 +190,7 @@ def get_residentes():
             JOIN apartamento a ON r.apartamento_id=a.id
             ORDER BY r.fecha_ingreso DESC
         """)
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -325,7 +326,7 @@ def get_pagos():
             LEFT JOIN cuota_mantenimiento cm ON p.cuota_id=cm.id
             ORDER BY p.fecha_pago DESC
         """)
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -364,7 +365,7 @@ def get_usuarios():
     try:
         conn = get_db(); c = conn.cursor()
         c.execute("SELECT id, nombre, apellido, email, telefono, rol, activo, created_at FROM usuario ORDER BY id DESC")
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -466,7 +467,7 @@ def get_residente_pagos(user_id):
                      LEFT JOIN cuota_mantenimiento cm ON p.cuota_id = cm.id
                      WHERE r.usuario_id = ?
                      ORDER BY p.fecha_pago DESC""", (user_id,))
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -483,13 +484,28 @@ def get_residente_incidencias(user_id):
                      JOIN residente r ON i.residente_id = r.id
                      WHERE r.usuario_id = ?
                      ORDER BY i.fecha_reporte DESC""", (user_id,))
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
         if conn: conn.close()
 
 # ── NOTIFICACIONES ────────────────────────────────────────────
+
+@app.route("/api/notificaciones", methods=["POST"])
+def create_notificacion():
+    conn = None
+    try:
+        d = request.json
+        conn = get_db(); c = conn.cursor()
+        c.execute("INSERT INTO notificacion (usuario_id, titulo, mensaje, tipo, leida, fecha_envio) VALUES (?, ?, ?, ?, 0, GETDATE())", (d.get("usuario_id"), d.get("titulo"), d.get("mensaje"), d.get("tipo", "general")))
+        conn.commit()
+        return jsonify({"message": "Notificacion creada"})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 
 @app.route("/api/notificaciones/<int:user_id>", methods=["GET"])
 def get_notificaciones(user_id):
@@ -502,7 +518,7 @@ def get_notificaciones(user_id):
                      FROM notificacion 
                      WHERE usuario_id IS NULL OR usuario_id = ?
                      ORDER BY fecha_envio DESC""", (user_id,))
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -650,7 +666,7 @@ def get_residente_reservas(uid):
                      JOIN area_comun ac ON r.area_id = ac.id
                      WHERE r.residente_id = ?
                      ORDER BY r.fecha DESC""", (rid,))
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -815,7 +831,7 @@ def get_incidencias():
                      LEFT JOIN usuario u ON r.usuario_id = u.id
                      LEFT JOIN apartamento a ON r.apartamento_id = a.id
                      ORDER BY i.fecha_reporte DESC""")
-        return ok(rows_to_list(c.fetchall(), c))
+        return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
@@ -861,5 +877,6 @@ def update_incidencia(id):
 
 
 if __name__ == "__main__":
+    print("RUTAS CARGADAS:", app.url_map)
     print("CondoManager API en http://localhost:5005")
     app.run(debug=True, port=5005)

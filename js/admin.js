@@ -2,7 +2,7 @@
    admin.js — CondoManager Admin Panel JavaScript
    ═══════════════════════════════════════════════════════════════ */
 
-const API = 'http://localhost:5005';
+const API = "http://127.0.0.1:5005";
 
 // ── NAVIGATION ────────────────────────────────────────────────
 const pageInfo = {
@@ -44,6 +44,7 @@ function showPanel(id, navBtn, menuId) {
     }
   }
   if (id === 'dashboard')         loadDashboard();
+    if (id === 'lista-reservas' || id === 'panel-lista-reservas') loadReservas();
   if (id === 'lista-residentes')  loadResidentes();
   if (id === 'panel-usuarios')    loadUsuarios();
   if (id === 'lista-incidencias') loadIncidencias();
@@ -69,7 +70,7 @@ function showToast(type, title, msg) {
   const t = document.getElementById('toast');
   document.getElementById('toast-title').textContent = title;
   document.getElementById('toast-msg').textContent   = msg;
-  document.getElementById('toast-icon').textContent  = type === 'success' ? '✅' : '❌';
+  document.getElementById('toast-icon').textContent  = type === 'success' ? '' : '❌';
   t.className = 'toast show ' + (type === 'success' ? 'toast-success' : 'toast-error');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
@@ -147,10 +148,15 @@ let allNotificaciones = [];
 
 async function loadNotificaciones() {
   try {
-    const res = await fetch(API + '/api/notificaciones');
-    allNotificaciones = await res.json();
+    const adminUser = JSON.parse(sessionStorage.getItem('condoUser') || '{}');
+    const adminId = adminUser.id || 1;
+    const res = await fetch(`${API}/api/notificaciones/${adminId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    allNotificaciones = JSON.parse(text);
     renderNotifDropdown();
   } catch(e) {
+    console.error('Notificaciones error:', e);
     const list = document.getElementById('notif-list');
     if (list) list.innerHTML = '<div style="padding:16px;text-align:center;color:#c0392b;font-size:12.5px;">No se pudo conectar con el servidor.</div>';
   }
@@ -187,7 +193,8 @@ async function marcarLeida(id) {
     const n = allNotificaciones.find(x => x.IdNotificacion === id);
     if (n) n.Leida = true;
     renderNotifDropdown();
-  } catch(e) { console.error(e); }
+  } catch(e) {
+     console.error(e); }
 }
 
 async function marcarTodasLeidas() {
@@ -200,10 +207,11 @@ async function marcarTodasLeidas() {
 }
 
 function toggleNotifDropdown() {
+  console.log("Toggling notif dropdown...");
   const dd = document.getElementById('notif-dropdown');
-  const isOpen = dd.style.display !== 'none';
-  dd.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) loadNotificaciones();
+  const isOpen = dd.classList.contains("open-dropdown");
+  if (isOpen) { dd.style.display = 'none'; dd.classList.remove("open-dropdown"); } else { dd.style.display = 'block'; dd.classList.add("open-dropdown"); loadNotificaciones(); }
+  loadNotificaciones();
 }
 
 // ── RESIDENTES ────────────────────────────────────────────────
@@ -240,6 +248,7 @@ async function loadResidentes() {
       </tr>`;
     }).join('');
   } catch(e) {
+    
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
   }
 }
@@ -321,6 +330,7 @@ async function verPerfilResidente(id) {
       } catch { resList.innerHTML = '<div style="font-size:13px;color:#c0392b;">Error cargando reservas.</div>'; }
     }
   } catch(e) {
+    
     showToast('error', 'Error', 'No se pudo cargar el perfil.');
   }
 }
@@ -347,6 +357,7 @@ async function editarResidente(id) {
     if (fi && r.FechaIngreso) fi.value = r.FechaIngreso.substring(0, 10);
     document.querySelector('#panel-crear-residente [style*="font-size:20px"]').textContent = 'Editar Residente';
   } catch(e) {
+    
     showToast('error', 'Error', 'No se pudo cargar el residente.');
   }
 }
@@ -379,11 +390,13 @@ async function submitResidente() {
       loadDashboard();
       setTimeout(() => showPanel('lista-residentes', null, 'residentes'), 800);
     } else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────
 async function loadDashboard() {
+  console.log("Iniciando loadDashboard...");
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('dash-total-residentes', '...');
   set('dash-pagos-pendientes', '...');
@@ -402,7 +415,7 @@ async function loadDashboard() {
     if (act && d.ultimosResidentes && d.ultimosResidentes.length) {
       act.innerHTML = d.ultimosResidentes.map(r => `
         <div class="timeline-item">
-          <div class="timeline-dot" style="background:#f0f4f9;">👤</div>
+          <div class="timeline-dot" style="background:#f0f4f9;"></div>
           <div>
             <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Residente registrado</div>
             <div style="font-size:12px;color:#8a9ab5;">${r.Nombre} ${r.Apellido||''} · Apto ${r.Apartamento||'—'}${r.FechaIngreso ? ' · ' + new Date(r.FechaIngreso).toLocaleDateString('es-DO') : ''}</div>
@@ -412,7 +425,8 @@ async function loadDashboard() {
     // Conteo en lista de residentes
     const rl = document.getElementById('res-count-label');
     if (rl) rl.textContent = (d.totalResidentes ?? 0) + ' residentes registrados';
-  } catch(e) { console.warn('Dashboard sin datos:', e.message); }
+  } catch(e) {
+     console.error('Dashboard error:', e); }
 }
 
 // ── PAGOS ────────────────────────────────────────────────────
@@ -426,7 +440,8 @@ async function loadResidentesSelect() {
       data.map(r => `<option value="${r.IdResidente}" data-nombre="${r.Nombre} ${r.Apellido||''} – Apto ${r.Apartamento||'—'}">${r.Nombre} ${r.Apellido||''} – Apto ${r.Apartamento||'—'}</option>`).join('');
     // Hook live preview
     setupReceiptPreview();
-  } catch(e) { console.warn('No se cargaron residentes para pagos:', e.message); }
+  } catch(e) {
+     console.warn('No se cargaron residentes para pagos:', e.message); }
 }
 
 function setupReceiptPreview() {
@@ -497,6 +512,7 @@ async function loadPagos() {
       <td><button class="btn-secondary btn-sm" onclick='verRecibo(${JSON.stringify(p)})'>Ver recibo</button></td>
     </tr>`).join('');
   } catch(e) {
+    
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
   }
 }
@@ -575,6 +591,7 @@ async function loadHistorialPagos() {
       <td><span class="badge ${badge[p.Estado]||'badge-gray'}">${p.Estado||'—'}</span></td>
     </tr>`).join('');
   } catch(e) {
+    
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
   }
 }
@@ -601,7 +618,8 @@ async function submitPago() {
       ['pago-residente-id','pago-monto','pago-metodo','pago-referencia','pago-fecha','pago-vencimiento','pago-notas'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
       setTimeout(() => showPanel('lista-pagos', null, 'pagos'), 800);
     } else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
 
 // ── NOTIFICACIÓN FORM ─────────────────────────────────────────
@@ -621,7 +639,8 @@ async function submitNotificacion() {
       document.getElementById('notif-titulo').value  = '';
       document.getElementById('notif-mensaje').value = '';
     } else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
 function updateNotifPreview() { /* live preview placeholder */ }
 
@@ -643,7 +662,7 @@ async function loadIncidencias() {
     }
 
     const estadoBadge = { 'abierta':'badge-red', 'en_proceso':'badge-yellow', 'resuelta':'badge-green', 'cerrada':'badge-gray' };
-    const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'🔧', 'resuelta':'✅', 'cerrada':'📁' };
+    const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'', 'resuelta':'', 'cerrada':'📁' };
     const iconBg      = { 'abierta':'#fff0f0', 'en_proceso':'#fff8e6', 'resuelta':'#e6f7ee', 'cerrada':'#f0f4f9' };
     const prioBorder  = { 'Alta':'#fad0d0', 'Media':'#ffe99a', 'Baja':'#dde5ef' };
     
@@ -660,7 +679,7 @@ async function loadIncidencias() {
         onmouseout="this.style.boxShadow='none'">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:42px;height:42px;background:${iconBg[status]||'#f0f4f9'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">${estadoIcon[status]||'📋'}</div>
+            <div style="width:42px;height:42px;background:${iconBg[status]||'#f0f4f9'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">${estadoIcon[status]||''}</div>
             <div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
                 <div style="font-size:14px;font-weight:700;color:#0f2d52;">${inc.Titulo}</div>
@@ -669,7 +688,7 @@ async function loadIncidencias() {
               <div style="font-size:12.5px;color:#8a9ab5;">
                 Reportado por: <strong>${inc.ResidenteNombre || 'Anónimo'}</strong> · Apto ${inc.Apartamento || '—'}
                 <br>
-                <span style="font-size:11.5px;">📍 ${inc.Ubicacion || 'No especificada'} · 📅 ${inc.FechaReporte ? new Date(inc.FechaReporte).toLocaleString('es-DO') : ''}</span>
+                <span style="font-size:11.5px;"> ${inc.Ubicacion || 'No especificada'} ·  ${inc.FechaReporte ? new Date(inc.FechaReporte).toLocaleString('es-DO') : ''}</span>
               </div>
             </div>
           </div>
@@ -678,6 +697,7 @@ async function loadIncidencias() {
       </div>`;
     }).join('');
   } catch(e) {
+    
     console.error("Error al cargar incidencias:", e);
     container.innerHTML = `<div style="background:#fff;border-radius:12px;padding:24px;text-align:center;color:#c0392b;">Error al conectar con el servidor.</div>`;
   }
@@ -693,14 +713,14 @@ async function abrirDetalleIncidencia(id) {
     const inc  = list.find(x => x.IdIncidencia === id);
     
     if (inc) {
-      const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'🔧', 'resuelta':'✅', 'cerrada':'📁' };
+      const estadoIcon  = { 'abierta':'🚨', 'en_proceso':'', 'resuelta':'', 'cerrada':'📁' };
       const estadoBadge = { 'abierta':'badge-red', 'en_proceso':'badge-yellow', 'resuelta':'badge-green', 'cerrada':'badge-gray' };
       const iconBg      = { 'abierta':'#fff0f0', 'en_proceso':'#fff8e6', 'resuelta':'#e6f7ee', 'cerrada':'#f0f4f9' };
       const border      = { 'Alta':'#fad0d0', 'Media':'#ffe99a', 'Baja':'#dde5ef' };
       const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : '—';
 
       set('inc-detalle-num', 'Detalle de Incidencia #INC-' + String(id).padStart(3, '0'));
-      set('inc-detalle-titulo', (estadoIcon[inc.Estado]||'📋') + ' ' + inc.Titulo);
+      set('inc-detalle-titulo', (estadoIcon[inc.Estado]||'') + ' ' + inc.Titulo);
       set('inc-detalle-reportado', (inc.ResidenteNombre || 'Anónimo') + ' · Apto ' + (inc.Apartamento || '—'));
       set('inc-detalle-fecha', inc.FechaReporte ? new Date(inc.FechaReporte).toLocaleString('es-DO') : '—');
       set('inc-detalle-ubicacion', inc.Ubicacion || 'No especificada');
@@ -718,7 +738,8 @@ async function abrirDetalleIncidencia(id) {
         card.style.borderColor = border[inc.Prioridad] || '#dde5ef';
       }
     }
-  } catch(e) { console.error("Error al cargar detalle:", e); }
+  } catch(e) {
+     console.error("Error al cargar detalle:", e); }
   showPanel('detalle-incidencia', null, 'incidencias');
 }
 
@@ -739,7 +760,8 @@ async function cambiarEstadoIncidencia(nuevoEstado) {
         badgeEl.className   = 'badge ' + (estadoBadge[nuevoEstado] || 'badge-gray');
       }
     } else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
 
 async function submitIncidencia() {
@@ -759,7 +781,8 @@ async function submitIncidencia() {
       ['inc-titulo','inc-descripcion','inc-ubicacion'].forEach(id => { const el = document.getElementById(id); if (el) el.value=''; });
       setTimeout(() => showPanel('lista-incidencias', null, 'incidencias'), 800);
     } else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.'); }
 }
 
 // ── ANUNCIOS ──────────────────────────────────────────────────
@@ -767,7 +790,10 @@ async function loadAnuncios() {
   const container = document.querySelector('#panel-lista-anuncios > div:last-child');
   if (!container) return;
   try {
-    const res  = await fetch(API + '/api/notificaciones');
+    const adminUser = JSON.parse(sessionStorage.getItem('condoUser') || '{}');
+    const adminId = adminUser.id || 1;
+    const res  = await fetch(`${API}/api/notificaciones/${adminId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.length) {
       container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">No hay anuncios creados aún.</div>';
@@ -783,9 +809,10 @@ async function loadAnuncios() {
           <div style="font-size:12px;color:#8a9ab5;">${n.FechaCreacion?new Date(n.FechaCreacion).toLocaleString('es-DO'):''}</div>
         </div>
         <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">${n.Mensaje||''}</div>
-        <span style="font-size:12px;color:#8a9ab5;">${n.Leida?'✅ Leída':'🔵 Sin leer'}</span>
+        <span style="font-size:12px;color:#8a9ab5;">${n.Leida?' Leída':'🔵 Sin leer'}</span>
       </div>`).join('');
-  } catch(e) { /* silent */ }
+  } catch(e) {
+     /* silent */ }
 }
 
 // ── USUARIOS ──────────────────────────────────────────────────
@@ -814,6 +841,7 @@ async function loadUsuarios() {
       <td><button class="btn-secondary btn-sm" onclick="toggleUserStatus(${u.id}, ${u.activo?0:1})">${u.activo?'Desactivar':'Activar'}</button></td>
     </tr>`).join('');
   } catch(e) {
+    
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
   }
 }
@@ -827,7 +855,8 @@ async function updateUserRole(id, rol) {
     const data = await res.json();
     if (res.ok) { showToast('success', 'Usuario actualizado', data.message); }
     else { showToast('error', 'Error', data.message); }
-  } catch(e) { showToast('error', 'Error de conexión', 'No se pudo actualizar el rol.'); }
+  } catch(e) {
+     showToast('error', 'Error de conexión', 'No se pudo actualizar el rol.'); }
 }
 
 async function toggleUserStatus(id, activo) {
@@ -837,7 +866,8 @@ async function toggleUserStatus(id, activo) {
       body: JSON.stringify({ activo })
     });
     if (res.ok) { loadUsuarios(); showToast('success', 'Estado actualizado', 'El estado del usuario ha sido cambiado.'); }
-  } catch(e) { showToast('error', 'Error', 'No se pudo cambiar el estado.'); }
+  } catch(e) {
+     showToast('error', 'Error', 'No se pudo cambiar el estado.'); }
 }
 
 // ── RESERVAS ──────────────────────────────────────────────────
@@ -849,7 +879,7 @@ async function loadReservas() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando reservas...</td></tr>';
   try {
     const res  = await fetch(API + '/api/reservas');
-    allReservas = await res.json();
+    const text = await res.text(); try { allReservas = JSON.parse(text); } catch(err) { console.error("Raw response:", text);  throw new Error("Error HTML"); }
     if (!allReservas.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:24px;">No hay reservas registradas.</td></tr>';
       return;
@@ -869,6 +899,7 @@ async function loadReservas() {
       </td>
     </tr>`).join('');
   } catch(e) {
+    
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
   }
 }
@@ -904,7 +935,8 @@ async function actualizarEstadoReserva(id, nuevoEstado) {
       loadReservas();
       setTimeout(() => showPanel('lista-reservas', null, 'reservas'), 1000);
     }
-  } catch(e) { showToast('error', 'Error', 'No se pudo actualizar la reserva.'); }
+  } catch(e) {
+     showToast('error', 'Error', 'No se pudo actualizar la reserva.'); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────

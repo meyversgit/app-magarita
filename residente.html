@@ -154,7 +154,7 @@ body { background: #f0f4f9; }
 
 <!-- Toast -->
 <div id="toast" class="toast">
-  <span id="toast-icon" style="font-size:20px;">✅</span>
+  <span id="toast-icon" style="font-size:20px;"></span>
   <div>
     <div id="toast-title" style="font-weight:600;font-size:13.5px;color:#1a2a3a;"></div>
     <div id="toast-msg"   style="font-size:12.5px;color:#6b7c93;margin-top:1px;"></div>
@@ -321,7 +321,7 @@ body { background: #f0f4f9; }
     <!-- ══════════════ DASHBOARD ══════════════ -->
     <div id="panel-dashboard" class="panel active">
       <div style="margin-bottom:24px;">
-        <div style="font-size:22px;font-weight:700;color:#0f2d52;" id="welcome-name">Bienvenido, Residente 👋</div>
+        <div style="font-size:22px;font-weight:700;color:#0f2d52;" id="welcome-name">Bienvenido, Residente </div>
         <div style="font-size:14px;color:#8a9ab5;margin-top:4px;" id="welcome-details">Cargando detalles de ubicación...</div>
       </div>
 
@@ -401,7 +401,7 @@ body { background: #f0f4f9; }
 
           <!-- Anuncio urgente -->
           <div id="urgent-alert-container" style="background:#fff;border-radius:12px;border-left:4px solid #e24b4a;border:0.5px solid #fad0d0;padding:18px;display:none;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#c0392b;margin-bottom:6px;">⚡ Alerta activa</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#c0392b;margin-bottom:6px;"> Alerta activa</div>
             <div style="font-size:13.5px;font-weight:700;color:#1a2a3a;margin-bottom:4px;" id="alert-title">...</div>
             <div style="font-size:12.5px;color:#6b7c93;" id="alert-desc">...</div>
             <button class="btn-secondary btn-sm" style="margin-top:12px;" onclick="showPanel('anuncios',null)">Ver detalle</button>
@@ -422,13 +422,13 @@ body { background: #f0f4f9; }
             <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;" id="profile-apto">Residente · Apartamento 7C</div>
             <span class="badge badge-green">Activo</span>
             <div style="margin-top:16px;border-top:0.5px solid #eef1f6;padding-top:16px;text-align:left;">
-              <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;">📍 Piso 7 · Ala Norte</div>
-              <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;">📅 Residente desde ene. 2023</div>
-              <div style="font-size:12px;color:#4a5a72;">🏢 Residencial Las Palmas</div>
+              <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"> Piso 7 · Ala Norte</div>
+              <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"> Residente desde ene. 2023</div>
+              <div style="font-size:12px;color:#4a5a72;"> Residencial Las Palmas</div>
             </div>
           </div>
           <div style="background:#e6f1fb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#1a3a6a;margin-bottom:10px;">📊 Estadísticas</div>
+            <div style="font-size:13px;font-weight:700;color:#1a3a6a;margin-bottom:10px;"> Estadísticas</div>
             <div style="display:flex;justify-content:space-between;font-size:13px;color:#1a3a6a;margin-bottom:8px;"><span>Pagos realizados</span><strong>4/4</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:13px;color:#1a3a6a;margin-bottom:8px;"><span>Reservas este mes</span><strong>2</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:13px;color:#1a3a6a;"><span>Incidencias abiertas</span><strong>1</strong></div>
@@ -501,7 +501,7 @@ body { background: #f0f4f9; }
     <div id="panel-historial-pagos" class="panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Historial de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Apartamento 7C</div></div>
-        <button class="btn-secondary" onclick="showToast('success','Descargado','Tu historial fue exportado en PDF.')">⬇ Descargar PDF</button>
+        <button class="btn-secondary" onclick="">Ver Detalle</button>
       </div>
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
         <table class="data-table">
@@ -562,7 +562,7 @@ body { background: #f0f4f9; }
             <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:#0f2d52;"><span>Total</span><span>RD$4,500</span></div>
           </div>
           <div style="background:#e6f7ee;border-radius:12px;padding:18px;border:0.5px solid #b2e8cd;">
-            <div style="font-size:13px;font-weight:700;color:#0a5c30;margin-bottom:8px;">✅ Historial de pagos</div>
+            <div style="font-size:13px;font-weight:700;color:#0a5c30;margin-bottom:8px;"> Historial de pagos</div>
             <div style="font-size:12.5px;color:#0a5c30;">Estás al día. Todos tus pagos anteriores han sido confirmados.</div>
           </div>
           <div style="background:#fff8e6;border-radius:12px;padding:18px;border:0.5px solid #ffe99a;">
@@ -582,22 +582,22 @@ body { background: #f0f4f9; }
           <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:18px;">Selecciona el área</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
             <div id="area-salon" onclick="selectArea('salon',this)" style="border:1.5px solid #dde5ef;border-radius:10px;padding:16px;cursor:pointer;text-align:center;transition:all 0.15s;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="if(!this.classList.contains('sel'))this.style.borderColor='#dde5ef'">
-              <div style="font-size:24px;margin-bottom:8px;">🎉</div>
+              <div style="font-size:24px;margin-bottom:8px;"></div>
               <div style="font-size:13px;font-weight:700;color:#0f2d52;">Salón Social</div>
               <div style="font-size:11.5px;color:#8a9ab5;margin-top:3px;">Aforo: 50 personas</div>
             </div>
             <div id="area-piscina" onclick="selectArea('piscina',this)" style="border:1.5px solid #dde5ef;border-radius:10px;padding:16px;cursor:pointer;text-align:center;transition:all 0.15s;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="if(!this.classList.contains('sel'))this.style.borderColor='#dde5ef'">
-              <div style="font-size:24px;margin-bottom:8px;">🏊</div>
+              <div style="font-size:24px;margin-bottom:8px;"></div>
               <div style="font-size:13px;font-weight:700;color:#0f2d52;">Piscina</div>
               <div style="font-size:11.5px;color:#8a9ab5;margin-top:3px;">Aforo: 20 personas</div>
             </div>
             <div id="area-gym" onclick="selectArea('gym',this)" style="border:1.5px solid #dde5ef;border-radius:10px;padding:16px;cursor:pointer;text-align:center;transition:all 0.15s;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="if(!this.classList.contains('sel'))this.style.borderColor='#dde5ef'">
-              <div style="font-size:24px;margin-bottom:8px;">🏋️</div>
+              <div style="font-size:24px;margin-bottom:8px;"></div>
               <div style="font-size:13px;font-weight:700;color:#0f2d52;">Gimnasio</div>
               <div style="font-size:11.5px;color:#8a9ab5;margin-top:3px;">Aforo: 8 personas</div>
             </div>
             <div id="area-bbq" onclick="selectArea('bbq',this)" style="border:1.5px solid #dde5ef;border-radius:10px;padding:16px;cursor:pointer;text-align:center;transition:all 0.15s;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="if(!this.classList.contains('sel'))this.style.borderColor='#dde5ef'">
-              <div style="font-size:24px;margin-bottom:8px;">🍖</div>
+              <div style="font-size:24px;margin-bottom:8px;"></div>
               <div style="font-size:13px;font-weight:700;color:#0f2d52;">Área BBQ</div>
               <div style="font-size:11.5px;color:#8a9ab5;margin-top:3px;">Aforo: 25 personas</div>
             </div>
@@ -642,7 +642,7 @@ body { background: #f0f4f9; }
             </div>
           </div>
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:12px;">📋 Reglamento de uso</div>
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:12px;"> Reglamento de uso</div>
             <div style="font-size:12.5px;color:#4a5a72;margin-bottom:6px;">• Máximo 2 reservas al mes por apartamento</div>
             <div style="font-size:12.5px;color:#4a5a72;margin-bottom:6px;">• Reservas con mínimo 48h de anticipación</div>
             <div style="font-size:12.5px;color:#4a5a72;margin-bottom:6px;">• Dejar el área limpia al finalizar</div>
@@ -670,13 +670,13 @@ body { background: #f0f4f9; }
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
           <div class="form-group"><label class="form-label">Categoría *</label>
             <select class="form-input form-select" id="inc-cat">
-              <option value="plomeria">🔧 Plomería</option>
-              <option value="electricidad">💡 Electricidad</option>
+              <option value="plomeria"> Plomería</option>
+              <option value="electricidad"> Electricidad</option>
               <option value="limpieza">🧹 Limpieza</option>
               <option value="ascensores">🛗 Ascensores</option>
-              <option value="areas comunes">🏢 Áreas comunes</option>
+              <option value="areas comunes"> Áreas comunes</option>
               <option value="seguridad">🔒 Seguridad</option>
-              <option value="otro">📦 Otro</option>
+              <option value="otro"> Otro</option>
             </select>
           </div>
           <div class="form-group"><label class="form-label">Título de la incidencia *</label><input class="form-input" type="text" id="inc-titulo" placeholder="Ej: Fuga de agua en baño principal"/></div>
@@ -705,7 +705,7 @@ body { background: #f0f4f9; }
         </div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="background:#fff8e6;border-radius:12px;padding:18px;border:0.5px solid #ffe99a;">
-            <div style="font-size:13px;font-weight:700;color:#7a5500;margin-bottom:8px;">💡 Consejos al reportar</div>
+            <div style="font-size:13px;font-weight:700;color:#7a5500;margin-bottom:8px;"> Consejos al reportar</div>
             <div style="font-size:12.5px;color:#7a5500;margin-bottom:6px;">• Sé específico con la ubicación exacta</div>
             <div style="font-size:12.5px;color:#7a5500;margin-bottom:6px;">• Incluye fotos si es posible</div>
             <div style="font-size:12.5px;color:#7a5500;margin-bottom:6px;">• Indica si hay riesgo inmediato</div>
@@ -714,12 +714,12 @@ body { background: #f0f4f9; }
           <div style="background:#fff0f0;border-radius:12px;padding:18px;border:0.5px solid #fad0d0;">
             <div style="font-size:13px;font-weight:700;color:#c0392b;margin-bottom:8px;">🚨 Emergencia</div>
             <div style="font-size:12.5px;color:#c0392b;margin-bottom:12px;">Si hay riesgo inmediato (incendio, inundación, gas), llama directamente:</div>
-            <div style="font-size:15px;font-weight:700;color:#c0392b;">📞 809-000-0000</div>
+            <div style="font-size:15px;font-weight:700;color:#c0392b;"> 809-000-0000</div>
             <div style="font-size:11.5px;color:#8a9ab5;margin-top:4px;">Portería · 24/7</div>
           </div>
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:18px;">
             <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:12px;">⏱ Tiempos de respuesta</div>
-            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#4a5a72;margin-bottom:8px;"><span>🔴 Alta</span><span style="font-weight:600;">2–4 horas</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#4a5a72;margin-bottom:8px;"><span> Alta</span><span style="font-weight:600;">2–4 horas</span></div>
             <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#4a5a72;margin-bottom:8px;"><span>🟡 Media</span><span style="font-weight:600;">24 horas</span></div>
             <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#4a5a72;"><span>🟢 Baja</span><span style="font-weight:600;">2–3 días</span></div>
           </div>
@@ -737,7 +737,7 @@ body { background: #f0f4f9; }
         <div style="background:#fff;border-radius:12px;border:0.5px solid #ffe99a;padding:20px;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
             <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:44px;height:44px;background:#fff8e6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔧</div>
+              <div style="width:44px;height:44px;background:#fff8e6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;"></div>
               <div>
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><span style="font-size:14px;font-weight:700;color:#0f2d52;">Fuga de agua · Pasillo 2do piso</span><span class="badge badge-yellow">En proceso</span></div>
                 <div style="font-size:12.5px;color:#8a9ab5;">Reportado el 24 abr 2026 · Categoría: Plomería · Prioridad: Alta</div>
@@ -770,7 +770,7 @@ body { background: #f0f4f9; }
         <div style="background:#fff;border-radius:12px;border:0.5px solid #b2e8cd;padding:20px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:44px;height:44px;background:#e6f7ee;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;">💡</div>
+              <div style="width:44px;height:44px;background:#e6f7ee;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;"></div>
               <div>
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><span style="font-size:14px;font-weight:700;color:#0f2d52;">Luminaria quemada · Estacionamiento</span><span class="badge badge-green">Resuelta</span></div>
                 <div style="font-size:12.5px;color:#8a9ab5;">Reportado el 20 abr 2026 · Resuelta el 22 abr · En 2 días</div>
@@ -789,51 +789,51 @@ body { background: #f0f4f9; }
         <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:22px;border-left:4px solid #e24b4a;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
             <div style="display:flex;align-items:center;gap:10px;">
-              <span class="badge badge-red">⚡ Alerta urgente</span>
+              <span class="badge badge-red"> Alerta urgente</span>
               <span style="font-size:11.5px;background:#fff0f0;color:#c0392b;padding:2px 8px;border-radius:99px;font-weight:700;">NUEVO</span>
             </div>
             <div style="font-size:12px;color:#8a9ab5;">Hoy 09:30 AM</div>
           </div>
           <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Corte de electricidad zona norte</div>
           <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Se informa que habrá corte de electricidad en la zona norte del edificio de <strong>10:00 AM a 2:00 PM</strong> por trabajos de mantenimiento preventivo. Se recomienda no usar el ascensor durante ese período.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;">👤 Administración del edificio</div>
+          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
         </div>
 
         <!-- Evento -->
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #3b9eff;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
             <div style="display:flex;align-items:center;gap:10px;">
-              <span class="badge badge-blue">📅 Evento</span>
+              <span class="badge badge-blue"> Evento</span>
               <span style="font-size:11.5px;background:#e6f1fb;color:#1a6fc4;padding:2px 8px;border-radius:99px;font-weight:700;">NUEVO</span>
             </div>
             <div style="font-size:12px;color:#8a9ab5;">Ayer 03:15 PM</div>
           </div>
           <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Reunión de propietarios – Mayo 2026</div>
           <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Se convoca a todos los propietarios a la asamblea mensual el próximo <strong>5 de mayo a las 7:00 PM</strong> en el salón social. Se tratarán temas de presupuesto, obras y normas de convivencia.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;">👤 Administración del edificio</div>
+          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
         </div>
 
         <!-- General -->
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #0d7d45;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <span class="badge badge-green">📢 General</span>
+            <span class="badge badge-green"> General</span>
             <div style="font-size:12px;color:#8a9ab5;">20 abr 2026</div>
           </div>
           <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Normas de uso de la piscina – Temporada 2026</div>
           <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Recordamos a todos los residentes las normas de uso de la piscina durante la temporada. Horario: <strong>8:00 AM – 8:00 PM</strong>. Niños menores de 12 años deben ir acompañados de un adulto.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;">👤 Administración del edificio</div>
+          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
         </div>
 
         <!-- Cobro -->
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #b07800;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <span class="badge badge-yellow">💳 Recordatorio</span>
+            <span class="badge badge-yellow"> Recordatorio</span>
             <div style="font-size:12px;color:#8a9ab5;">1 abr 2026</div>
           </div>
           <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Recordatorio de pago mensual – Mayo 2026</div>
           <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">El pago mensual de mantenimiento correspondiente a mayo vence el <strong>5 de mayo</strong>. Monto: RD$4,500. Realice su pago a tiempo para evitar recargos.</div>
           <div style="margin-top:12px;"><button class="btn-accent btn-sm" onclick="showPanel('realizar-pago',null,'pagos')">Pagar ahora →</button></div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;">👤 Administración del edificio</div>
+          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
         </div>
       </div>
     </div>
@@ -863,19 +863,19 @@ body { background: #f0f4f9; }
         <!-- Index -->
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
-            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">📋 Índice</div>
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;"> Índice</div>
             <div style="font-size:13px;color:#3b9eff;padding:8px 0;border-bottom:0.5px solid #eef1f6;cursor:pointer;font-weight:500;">1. Normas de convivencia</div>
             <div style="font-size:13px;color:#3b9eff;padding:8px 0;border-bottom:0.5px solid #eef1f6;cursor:pointer;font-weight:500;">2. Uso de áreas comunes</div>
             <div style="font-size:13px;color:#3b9eff;padding:8px 0;border-bottom:0.5px solid #eef1f6;cursor:pointer;font-weight:500;">3. Pagos y cuotas</div>
             <div style="font-size:13px;color:#3b9eff;padding:8px 0;cursor:pointer;font-weight:500;">4. Seguridad</div>
           </div>
           <div style="background:#e6f1fb;border-radius:12px;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#1a3a6a;margin-bottom:8px;">📄 Documentos</div>
-            <button class="btn-secondary" style="width:100%;justify-content:center;margin-bottom:8px;font-size:12.5px;" onclick="showToast('success','Descargando','El reglamento fue descargado en PDF.')">⬇ Descargar PDF</button>
+            <div style="font-size:13px;font-weight:700;color:#1a3a6a;margin-bottom:8px;"> Documentos</div>
+            <button class="btn-secondary" style="width:100%;justify-content:center;margin-bottom:8px;font-size:12.5px;" onclick="">Ver Detalle</button>
             <button class="btn-secondary" style="width:100%;justify-content:center;font-size:12.5px;">📧 Enviar por correo</button>
           </div>
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:18px;">
-            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:8px;">📞 Contacto</div>
+            <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:8px;"> Contacto</div>
             <div style="font-size:12.5px;color:#4a5a72;margin-bottom:6px;">Administración</div>
             <div style="font-size:13.5px;font-weight:600;color:#0f2d52;margin-bottom:10px;">809-000-0001</div>
             <div style="font-size:12.5px;color:#4a5a72;margin-bottom:4px;">Portería 24/7</div>
@@ -940,7 +940,7 @@ function showToast(type, title, msg) {
   const t = document.getElementById('toast');
   document.getElementById('toast-title').textContent = title;
   document.getElementById('toast-msg').textContent   = msg;
-  document.getElementById('toast-icon').textContent  = type === 'success' ? '✅' : '❌';
+  document.getElementById('toast-icon').textContent  = type === 'success' ? '' : '❌';
   t.className = 'toast show ' + (type === 'success' ? 'toast-success' : 'toast-error');
   clearTimeout(tt);
   tt = setTimeout(() => t.classList.remove('show'), 3500);
@@ -994,7 +994,7 @@ function updatePayInfo(val) {
   <div class="modal" style="width:420px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
       <div style="font-size:17px;font-weight:700;color:#0f2d52;">Mi Perfil</div>
-      <button onclick="closeProfileModal()" style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;">✕</button>
+      <button onclick="closeProfileModal()" style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;"></button>
     </div>
     <div style="text-align:center;margin-bottom:20px;">
       <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#0d7d45;" id="profile-avatar-modal">CM</div>

@@ -1,4 +1,4 @@
-const API = 'http://localhost:5005';
+const API = "http://localhost:5005";
 let currentUser = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
 let residentData = null;
 let selectedDate = '';
@@ -45,7 +45,7 @@ async function loadResidentBaseData() {
     if (document.getElementById('user-apto-top'))  document.getElementById('user-apto-top').textContent  = `Residente · ${aptoStr}`;
     
     // Dashboard Welcome
-    if (document.getElementById('welcome-name'))    document.getElementById('welcome-name').textContent = `Bienvenido, ${residentData.Nombre || currentUser.nombre} 👋`;
+    if (document.getElementById('welcome-name'))    document.getElementById('welcome-name').textContent = `Bienvenido, ${residentData.Nombre || currentUser.nombre} `;
     if (document.getElementById('welcome-details')) document.getElementById('welcome-details').textContent = `${aptoStr} · Piso ${residentData.Piso || '—'} · Residencial Las Palmas`;
     
     // Profile Panel
@@ -69,7 +69,7 @@ async function loadResidentBaseData() {
     // Fallback con datos de sesión si la API de residente falla
     const fullName = currentUser.nombre || 'Residente';
     document.querySelectorAll('[id^="user-name"], [id^="profile-name"]').forEach(el => el.textContent = fullName);
-    if (document.getElementById('welcome-name')) document.getElementById('welcome-name').textContent = `Bienvenido, ${fullName} 👋`;
+    if (document.getElementById('welcome-name')) document.getElementById('welcome-name').textContent = `Bienvenido, ${fullName} `;
     
     // Initials fallback
     const initials = (currentUser.nombre || 'R').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
@@ -101,16 +101,16 @@ async function loadResidentDashboard() {
     } else {
         kpiPagoStatus.textContent = 'Al día';
         kpiPagoStatus.style.color = '#0f2d52';
-        if (kpiPagoDesc) kpiPagoDesc.textContent = '✓ No tienes deudas';
+        if (kpiPagoDesc) kpiPagoDesc.textContent = ' No tienes deudas';
     }
   }
   
   if (kpiMontoPendiente) kpiMontoPendiente.textContent = `RD$${(residentData.Cuota || 4500).toLocaleString()}`;
   if (kpiVenceDesc) kpiVenceDesc.textContent = stats.pagosPendientes > 0 ? '⏰ Pago vencido' : '⏰ Próximo vencimiento: 5 mayo';
   if (kpiReservasCount) kpiReservasCount.textContent = stats.reservasActivas || 0;
-  if (kpiReservasDesc) kpiReservasDesc.textContent = stats.reservasActivas > 0 ? '📅 Tienes reservas activas' : 'Sin reservas próximas';
+  if (kpiReservasDesc) kpiReservasDesc.textContent = stats.reservasActivas > 0 ? ' Tienes reservas activas' : 'Sin reservas próximas';
   if (kpiIncidenciasCount) kpiIncidenciasCount.textContent = stats.incidenciasActivas || 0;
-  if (kpiIncidenciasDesc) kpiIncidenciasDesc.textContent = stats.incidenciasActivas > 0 ? '● En proceso' : '✓ Sin reportes activos';
+  if (kpiIncidenciasDesc) kpiIncidenciasDesc.textContent = stats.incidenciasActivas > 0 ? '● En proceso' : ' Sin reportes activos';
   
   // Resumen financiero
   if (document.getElementById('resumen-total-pagado')) {
@@ -160,7 +160,7 @@ async function loadRecentActivity() {
         data.pagos.forEach(p => {
             html += `
             <div class="timeline-item">
-                <div class="timeline-dot" style="background:#e6f1fb;">💳</div>
+                <div class="timeline-dot" style="background:#e6f1fb;"></div>
                 <div>
                   <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Pago registrado · ${p.Titulo}</div>
                   <div style="font-size:12px;color:#8a9ab5;">RD$${p.Monto.toLocaleString()} · ${p.Fecha ? new Date(p.Fecha).toLocaleDateString() : 'Reciente'} · <span class="badge ${p.Estado === 'pagado' ? 'badge-green' : 'badge-yellow'}" style="font-size:10.5px;">${p.Estado}</span></div>
@@ -171,7 +171,7 @@ async function loadRecentActivity() {
         data.incidencias.forEach(i => {
             html += `
             <div class="timeline-item">
-                <div class="timeline-dot" style="background:#fff0f0;">⚠️</div>
+                <div class="timeline-dot" style="background:#fff0f0;"></div>
                 <div>
                   <div style="font-size:13.5px;font-weight:600;color:#1a2a3a;">Incidencia: ${i.Titulo}</div>
                   <div style="font-size:12px;color:#8a9ab5;">${new Date(i.Fecha).toLocaleDateString()} · <span class="badge ${i.Estado === 'resuelta' ? 'badge-green' : 'badge-yellow'}" style="font-size:10.5px;">${i.Estado}</span></div>
@@ -280,7 +280,7 @@ async function loadResidentIncidencias() {
             <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;margin-bottom:12px;">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
                 <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="width:44px;height:44px;background:${iconBg[inc.Estado]||'#f0f4f9'};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${inc.Estado==='resuelta'?'💡':'🔧'}</div>
+                  <div style="width:44px;height:44px;background:${iconBg[inc.Estado]||'#f0f4f9'};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${inc.Estado==='resuelta'?'':''}</div>
                   <div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><span style="font-size:14px;font-weight:700;color:#0f2d52;">${inc.Titulo}</span><span class="badge ${badgeClass[inc.Estado]||'badge-gray'}">${inc.Estado.replace('_',' ')}</span></div>
                     <div style="font-size:12.5px;color:#8a9ab5;">Reportado el ${new Date(inc.FechaReporte).toLocaleDateString()} · Categoría: ${inc.Categoria}</div>
@@ -452,16 +452,16 @@ async function loadResidentReservas() {
         }
         
         const badgeClass = { pendiente:'badge-yellow', aprobada:'badge-green', rechazada:'badge-red' };
-        const iconMap = { 'Salón Social':'🎉', 'Piscina':'🏊', 'Gimnasio':'🏋️', 'Área BBQ':'🍖' };
+        const iconMap = { 'Salón Social':'', 'Piscina':'', 'Gimnasio':'', 'Área BBQ':'' };
         
         container.innerHTML = data.map(r => `
             <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:14px;">
-                  <div style="width:48px;height:48px;background:#f0f4f9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">${iconMap[r.area]||'📅'}</div>
+                  <div style="width:48px;height:48px;background:#f0f4f9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">${iconMap[r.area]||''}</div>
                   <div>
                     <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">${r.area}</div>
-                    <div style="font-size:12.5px;color:#8a9ab5;">📅 ${new Date(r.fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'})} · ${r.hora_inicio} – ${r.hora_fin}</div>
+                    <div style="font-size:12.5px;color:#8a9ab5;"> ${new Date(r.fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'})} · ${r.hora_inicio} – ${r.hora_fin}</div>
                   </div>
                 </div>
                 <div style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
@@ -689,6 +689,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+function showToast(type, title, msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent   = msg;
+  document.getElementById('toast-icon').textContent  = type === 'success' ? '' : '❌';
+  t.className = 'toast show ' + (type === 'success' ? 'toast-success' : 'toast-error');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function confirmAction(title, body, onConfirm) {
+  document.getElementById('modal-title').textContent = title || 'Confirmar';
+  document.getElementById('modal-body').textContent  = body  || '¿Está seguro?';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-confirm-btn').onclick = () => {
+    document.getElementById('modal-overlay').classList.remove('open');
+    if (onConfirm) onConfirm();
+  };
+}
 
 init();
 
