@@ -13,8 +13,7 @@ async function init() {
     return;
   }
   
-  // Limpiar placeholders estáticos para notar si la carga falla
-  document.querySelectorAll('[id^="user-name"], [id^="welcome-"], [id^="profile-"]').forEach(el => el.textContent = "...");
+  document.querySelectorAll('[id^="user-name"], [id^="welcome-"], #profile-name, #profile-apto').forEach(el => el.textContent = "...");
 
   try {
     await loadResidentBaseData();
@@ -590,8 +589,16 @@ function openProfileModal() {
   if (residentData || currentUser) {
     const initials = document.querySelector('.avatar').textContent;
     document.getElementById('profile-avatar-modal').textContent = initials;
-    const fName = residentData ? `${residentData.Nombre || ''} ${residentData.Apellido || ''}`.trim() : currentUser.nombre;
-    document.getElementById('profile-nombre-modal').textContent = fName;
+    
+    let fName = '';
+    if (residentData) {
+      fName = `${residentData.Nombre || ''} ${residentData.Apellido || ''}`.trim();
+    }
+    if (!fName && currentUser) {
+      fName = currentUser.nombre;
+    }
+    document.getElementById('profile-nombre-modal').textContent = fName || 'Residente';
+    
     document.getElementById('profile-email-modal').textContent = residentData?.Email || currentUser?.email || '';
     const aptoStr = residentData?.Apartamento ? `Apto ${residentData.Apartamento}` : 'Sin apartamento';
     document.getElementById('profile-rol-modal').textContent = aptoStr;

@@ -386,21 +386,21 @@
       <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;text-align:center;">
-            <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#1a6fc4;">CM</div>
-            <div style="font-size:16px;font-weight:700;color:#0f2d52;">Carlos Mendoza</div>
-            <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;">Apartamento 7C · Piso 7</div>
-            <span class="badge badge-green">Activo</span>
+            <div class="avatar" id="perfil-avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#1a6fc4;">--</div>
+            <div style="font-size:16px;font-weight:700;color:#0f2d52;" id="perfil-nombre">--</div>
+            <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;" id="perfil-apto">--</div>
+            <span class="badge badge-green" id="perfil-estado-badge">--</span>
             <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
-              <button class="btn-secondary btn-sm" onclick="showPanel('crear-residente',null,'residentes')">Editar</button>
+              <button class="btn-secondary btn-sm" onclick="editarResidente(currentResidenteId)">Editar</button>
               <button class="btn-danger btn-sm" onclick="confirmAction('¿Desactivar residente?','Esta acción cambiará el estado del residente a Inactivo.')">Desactivar</button>
             </div>
           </div>
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
             <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Información de contacto</div>
-            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">📞 829-555-1001</div>
-            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">✉️ c.mendoza@mail.com</div>
-            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">🪪 001-1234567-8</div>
-            <div style="font-size:13px;color:#4a5a72;">📅 Desde enero 2023</div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">📞 <span id="perfil-telefono">--</span></div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">✉️ <span id="perfil-email">--</span></div>
+            <div style="font-size:13px;color:#4a5a72;margin-bottom:8px;">🪪 <span id="perfil-cedula">--</span></div>
+            <div style="font-size:13px;color:#4a5a72;">📅 <span id="perfil-desde">--</span></div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:16px;">
@@ -408,17 +408,16 @@
             <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Historial de pagos</div>
             <table class="data-table">
               <thead><tr><th>Mes</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead>
-              <tbody>
-                <tr><td>Abril 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>15/04/2026</td></tr>
-                <tr><td>Marzo 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>10/03/2026</td></tr>
-                <tr><td>Febrero 2026</td><td>Mantenimiento</td><td>RD$4,500</td><td><span class="badge badge-green">Pagado</span></td><td>08/02/2026</td></tr>
+              <tbody id="perfil-pagos-tbody">
+                <tr><td colspan="5" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
             <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Reservas recientes</div>
-            <div style="font-size:13.5px;color:#4a5a72;padding:10px 0;border-bottom:0.5px solid #eef1f6;">📅 Salón social · 28 abr 2026 · 18:00–22:00 · <span class="badge badge-green">Aprobada</span></div>
-            <div style="font-size:13.5px;color:#4a5a72;padding:10px 0;">🏊 Piscina · 20 abr 2026 · 10:00–12:00 · <span class="badge badge-green">Aprobada</span></div>
+            <div id="perfil-reservas-list">
+              <div style="font-size:13px;color:#8a9ab5;">Cargando...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -473,15 +472,16 @@
           <div style="background:#fff;border-radius:10px;padding:20px;border:0.5px solid #dde5ef;">
             <div style="text-align:center;padding-bottom:14px;border-bottom:0.5px solid #eef1f6;margin-bottom:14px;">
               <div style="font-size:15px;font-weight:700;color:#0f2d52;">Edificio Residencial</div>
-              <div style="font-size:11px;color:#8a9ab5;">NIT: 1-23-45678-9</div>
+              <div style="font-size:11px;color:#8a9ab5;">Recibo de pago</div>
             </div>
-            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Residente:</strong> –</div>
-            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Concepto:</strong> –</div>
-            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Fecha:</strong> –</div>
-            <div style="font-size:12px;color:#4a5a72;margin-bottom:16px;"><strong>Método:</strong> –</div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Residente:</strong> <span id="prev-residente">—</span></div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Concepto:</strong> <span id="prev-concepto">—</span></div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Fecha:</strong> <span id="prev-fecha">—</span></div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"><strong>Método:</strong> <span id="prev-metodo">—</span></div>
+            <div style="font-size:12px;color:#4a5a72;margin-bottom:16px;"><strong>Referencia:</strong> <span id="prev-ref">—</span></div>
             <div style="display:flex;justify-content:space-between;padding-top:14px;border-top:0.5px solid #eef1f6;">
               <span style="font-size:13px;font-weight:700;color:#0f2d52;">Total</span>
-              <span style="font-size:18px;font-weight:700;color:#0f2d52;">RD$0.00</span>
+              <span style="font-size:18px;font-weight:700;color:#0f2d52;" id="prev-monto">RD$0.00</span>
             </div>
           </div>
         </div>
@@ -902,6 +902,22 @@
       <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Cerrar sesión
     </button>
+  </div>
+</div>
+
+<!-- ===== RECIBO MODAL ===== -->
+<div class="modal-overlay" id="recibo-modal-overlay">
+  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:700;color:#0f2d52;">🧾 Recibo de Pago</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="window.print()" style="background:#e6f1fb;border:none;cursor:pointer;padding:6px 12px;border-radius:6px;font-size:12.5px;font-weight:600;color:#1a6fc4;">🖨 Imprimir</button>
+        <button onclick="closeReciboModal()" style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;">✕</button>
+      </div>
+    </div>
+    <div id="recibo-modal-content">
+      <!-- Filled dynamically by verRecibo() -->
+    </div>
   </div>
 </div>
 
