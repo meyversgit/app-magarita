@@ -132,6 +132,43 @@ def dashboard():
     finally:
         if conn: conn.close()
 
+@app.route("/api/reservas", methods=["GET"])
+def get_reservas_admin():
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("""SELECT r.id AS IdReserva, r.residente_id AS ResidenteId,
+                     ac.nombre AS Area, r.fecha AS Fecha,
+                     r.hora_inicio AS Hora, r.estado AS Estado,
+                     u.nombre + ' ' + u.apellido AS ResidenteNombre,
+                     a.numero AS Apartamento
+                     FROM reserva r
+                     LEFT JOIN area_comun ac ON r.area_id = ac.id
+                     LEFT JOIN residente res ON r.residente_id = res.id
+                     LEFT JOIN usuario u ON res.usuario_id = u.id
+                     LEFT JOIN apartamento a ON res.apartamento_id = a.id
+                     ORDER BY r.fecha DESC""")
+        return ok(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/reservas/<int:id>/estado", methods=["PUT"])
+def update_reserva_estado(id):
+    d = request.get_json(silent=True) or {}
+    estado = d.get("estado", "pendiente")
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("UPDATE reserva SET estado=? WHERE id=?", (estado, id))
+        conn.commit()
+        return jsonify({"message": f"Reserva actualizada a '{estado}'."})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 # ── RESIDENTES ────────────────────────────────────────────────
 
 @app.route("/api/residentes", methods=["GET"])
@@ -533,7 +570,8 @@ def post_residente_reserva():
         uid = data.get('usuario_id')
         area = data.get('area')
         fecha = data.get('fecha')
-        hora = data.get('hora')
+        hora_i = data.get('hora_inicio')
+        hora_f = data.get('hora_fin', '12:00') # Default si no viene
         
         if not uid: return jsonify({"message": "ID de usuario inválido o sesión expirada"}), 401
         
@@ -554,9 +592,26 @@ def post_residente_reserva():
         else:
             rid = row[0]
         
-        # Asumimos que existe una tabla reserva
-        c.execute("""INSERT INTO reserva (residente_id, area_comun, fecha_reserva, hora_inicio, estado)
-                     VALUES (?, ?, ?, ?, 'pendiente')""", (rid, area, fecha, hora))
+        # Mapear nombre de área a ID
+        area_map = {
+            'salon': 'Salón Social',
+            'piscina': 'Piscina',
+            'gym': 'Gimnasio',
+            'bbq': 'Área BBQ'
+        }
+        real_name = area_map.get(area, area)
+        
+        c.execute("SELECT id FROM area_comun WHERE nombre=?", (real_name,))
+        area_row = c.fetchone()
+        if not area_row:
+            # Fallback a la primera área si no coincide el nombre
+            c.execute("SELECT TOP 1 id FROM area_comun")
+            area_row = c.fetchone()
+        
+        area_id = area_row[0] if area_row else 1
+        
+        c.execute("""INSERT INTO reserva (residente_id, area_id, fecha, hora_inicio, hora_fin, estado)
+                     VALUES (?, ?, ?, ?, ?, 'pendiente')""", (rid, area_id, fecha, hora_i, hora_f))
         conn.commit()
         return jsonify({"message": "Solicitud de reserva enviada"}), 201
     except Exception as e:
@@ -565,8 +620,67 @@ def post_residente_reserva():
     finally:
         if conn: conn.close()
 
-@app.route("/api/notificaciones", methods=["POST"])
-def create_notificacion():
+@app.route("/api/residente/reservas/<int:uid>", methods=["GET"])
+def get_residente_reservas(uid):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("SELECT id FROM residente WHERE usuario_id=?", (uid,))
+        row = c.fetchone()
+        if not row: return ok([])
+        rid = row[0]
+        c.execute("""SELECT r.id, ac.nombre AS area, r.fecha, r.hora_inicio, r.hora_fin, r.estado
+                     FROM reserva r
+                     JOIN area_comun ac ON r.area_id = ac.id
+                     WHERE r.residente_id = ?
+                     ORDER BY r.fecha DESC""", (rid,))
+        return ok(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route("/api/residente/reservas/<int:id>", methods=["DELETE"])
+def cancel_residente_reserva(id):
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        # Solo permitir cancelar si está pendiente o aprobada (lógica simple)
+        c.execute("DELETE FROM reserva WHERE id=?", (id,))
+        conn.commit()
+        return jsonify({"message": "Reserva cancelada correctamente."})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+@app.route("/api/residente/reservas/<int:id>", methods=["PUT"])
+def update_residente_reserva(id):
+    conn = None
+    try:
+        data = request.get_json(silent=True) or {}
+        area = data.get('area')
+        fecha = data.get('fecha')
+        hora_i = data.get('hora_inicio')
+        hora_f = data.get('hora_fin')
+        
+        # Mapear nombre de área a ID
+        area_map = { 'salon': 'Salón Social', 'piscina': 'Piscina', 'gym': 'Gimnasio', 'bbq': 'Área BBQ' }
+        real_name = area_map.get(area, area)
+        
+        conn = get_db(); c = conn.cursor()
+        c.execute("SELECT id FROM area_comun WHERE nombre=?", (real_name,))
+        area_row = c.fetchone()
+        area_id = area_row[0] if area_row else 1
+        
+        c.execute("""UPDATE reserva 
+                     SET area_id=?, fecha=?, hora_inicio=?, hora_fin=?
+                     WHERE id=?""", (area_id, fecha, hora_i, hora_f, id))
+        conn.commit()
+        return jsonify({"message": "Reserva actualizada correctamente."})
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
     d = request.get_json(silent=True) or {}
     titulo = (d.get("titulo") or "").strip()
     mensaje = (d.get("mensaje") or "").strip()
@@ -667,6 +781,7 @@ def update_incidencia(id):
     finally:
         if conn: conn.close()
 
+
 if __name__ == "__main__":
-    print("CondoManager API en http://localhost:5000")
-    app.run(debug=True, port=5000)
+    print("CondoManager API en http://localhost:5005")
+    app.run(debug=True, port=5005)

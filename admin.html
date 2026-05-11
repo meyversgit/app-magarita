@@ -429,7 +429,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Lista de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Abril 2026</div></div>
         <div style="display:flex;gap:10px;">
-          <select class="form-input form-select" style="width:180px;"><option>Todos los estados</option><option>Pagado</option><option>Pendiente</option><option>Vencido</option></select>
+          <select class="form-input form-select" style="width:180px;" id="pago-filtro-estado" onchange="loadPagos()"><option value="">Todos los estados</option><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option><option value="vencido">Vencido</option></select>
           <button class="btn-primary" onclick="showPanel('registrar-pago',null,'pagos')">+ Registrar pago</button>
         </div>
       </div>
@@ -493,7 +493,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Historial de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Todos los registros históricos</div></div>
         <div style="display:flex;gap:10px;">
-          <input type="month" class="form-input" style="width:160px;" value="2026-04"/>
+          <input type="month" class="form-input" style="width:160px;" value="2026-04" id="historial-filtro-mes" oninput="loadHistorialPagos()"/>
           <button class="btn-secondary" onclick="showToast('success','Exportado','El historial fue exportado en Excel.')">⬇ Exportar</button>
         </div>
       </div>
@@ -729,11 +729,8 @@
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;margin-bottom:20px;">
         <table class="data-table">
           <thead><tr><th>Residente</th><th>Área</th><th>Fecha</th><th>Horario</th><th>Personas</th><th>Estado</th><th>Acción</th></tr></thead>
-          <tbody>
-            <tr><td><span style="font-weight:600;">María García</span></td><td>Salón social</td><td>28/04/2026</td><td>18:00 – 22:00</td><td>30</td><td><span class="badge badge-green">Aprobada</span></td><td><button class="btn-secondary btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Gestionar</button></td></tr>
-            <tr><td><span style="font-weight:600;">Carlos Mendoza</span></td><td>Piscina</td><td>27/04/2026</td><td>10:00 – 12:00</td><td>4</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Revisar</button></td></tr>
-            <tr><td><span style="font-weight:600;">Ana López</span></td><td>BBQ</td><td>30/04/2026</td><td>14:00 – 18:00</td><td>15</td><td><span class="badge badge-yellow">Pendiente</span></td><td><button class="btn-accent btn-sm" onclick="showPanel('aprobar-reservas',null,'reservas')">Revisar</button></td></tr>
-            <tr><td><span style="font-weight:600;">Pedro Ramírez</span></td><td>Gimnasio</td><td>26/04/2026</td><td>07:00 – 09:00</td><td>1</td><td><span class="badge badge-red">Rechazada</span></td><td><button class="btn-secondary btn-sm">Ver motivo</button></td></tr>
+          <tbody id="reservas-tbody">
+            <tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando reservas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -743,22 +740,22 @@
     <div id="panel-aprobar-reservas" class="panel">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
         <button class="btn-secondary btn-sm" onclick="showPanel('lista-reservas',null,'reservas')">← Volver</button>
-        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Gestión de Reserva #RES-028</div>
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;" id="res-gestion-titulo">Gestión de Reserva</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
           <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Detalle de la solicitud</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Residente</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">Carlos Mendoza</div><div style="font-size:12.5px;color:#4a5a72;">Apto 7C</div></div>
-            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Área solicitada</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">Piscina</div><div style="font-size:12.5px;color:#4a5a72;">Aforo: 20 personas</div></div>
-            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Fecha y hora</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">27 de abril 2026</div><div style="font-size:12.5px;color:#4a5a72;">10:00 AM – 12:00 PM</div></div>
-            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">N° de personas</div><div style="font-size:14px;font-weight:700;color:#0f2d52;">4 personas</div><div style="font-size:12.5px;color:#0d7d45;">Dentro del aforo</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Residente</div><div style="font-size:14px;font-weight:700;color:#0f2d52;" id="res-gestion-nombre">---</div><div style="font-size:12.5px;color:#4a5a72;" id="res-gestion-apto">---</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Área solicitada</div><div style="font-size:14px;font-weight:700;color:#0f2d52;" id="res-gestion-area">---</div><div style="font-size:12.5px;color:#4a5a72;">---</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">Fecha y hora</div><div style="font-size:14px;font-weight:700;color:#0f2d52;" id="res-gestion-fecha">---</div><div style="font-size:12.5px;color:#4a5a72;" id="res-gestion-hora">---</div></div>
+            <div style="background:#f0f4f9;border-radius:10px;padding:14px;"><div style="font-size:11.5px;color:#8a9ab5;margin-bottom:4px;">N° de personas</div><div style="font-size:14px;font-weight:700;color:#0f2d52;" id="res-gestion-personas">---</div><div style="font-size:12.5px;color:#0d7d45;">---</div></div>
           </div>
-          <div class="form-group"><label class="form-label">Notas del residente</label><div style="background:#f0f4f9;border-radius:8px;padding:12px;font-size:13.5px;color:#4a5a72;">Uso familiar de la piscina con niños. No habrá música ni eventos especiales.</div></div>
-          <div class="form-group"><label class="form-label">Comentario del administrador (opcional)</label><textarea class="form-input" rows="3" placeholder="Añade un comentario o motivo de rechazo..."></textarea></div>
+          <div class="form-group"><label class="form-label">Notas del residente</label><div style="background:#f0f4f9;border-radius:8px;padding:12px;font-size:13.5px;color:#4a5a72;" id="res-gestion-notas">---</div></div>
+          <div class="form-group"><label class="form-label">Comentario del administrador (opcional)</label><textarea class="form-input" rows="3" placeholder="Añade un comentario o motivo de rechazo..." id="res-gestion-comentario"></textarea></div>
           <div style="display:flex;gap:12px;margin-top:8px;">
-            <button class="btn-danger" style="flex:1;" onclick="showToast('error','Reserva rechazada','Se notificó al residente con el motivo.')">✕ Rechazar</button>
-            <button class="btn-success" style="flex:2;font-size:14px;padding:11px;" onclick="showToast('success','Reserva aprobada','El residente recibió la confirmación.')">✓ Aprobar reserva</button>
+            <button class="btn-danger" style="flex:1;" id="btn-rechazar-reserva">✕ Rechazar</button>
+            <button class="btn-success" style="flex:2;font-size:14px;padding:11px;" id="btn-aprobar-reserva">✓ Aprobar reserva</button>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:16px;">

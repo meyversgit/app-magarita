@@ -1,7 +1,10 @@
-const API = 'http://localhost:5000';
+const API = 'http://localhost:5005';
 let currentUser = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
 let residentData = null;
-
+let selectedDate = '';
+let editingReservaId = null;
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
 async function init() {
   console.log("Iniciando panel de residente...", currentUser);
   if (!currentUser) {
@@ -18,7 +21,8 @@ async function init() {
     loadResidentDashboard();
     loadResidentProfile();
     loadAnuncios();
-  } catch (err) {
+    renderCalendar();
+   } catch (err) {
     console.error("Error en la inicialización:", err);
   }
 }
@@ -345,24 +349,32 @@ async function submitReserva() {
     const data = {
         usuario_id: currentUser.id,
         area: selectedArea,
-        fecha: document.getElementById('res-fecha').value,
-        hora: document.getElementById('res-hora').value
+        fecha: selectedDate,
+        hora_inicio: document.getElementById('res-hora').value,
+        hora_fin: document.getElementById('res-hora-fin').value,
+        personas: document.getElementById('res-personas').value,
+        descripcion: document.getElementById('res-desc').value
     };
     
     if (!data.area || !data.fecha) {
-        showToast('error', 'Campos incompletos', 'Selecciona un área y una fecha.');
+        showToast('error', 'Campos incompletos', 'Selecciona un área y una fecha en el calendario.');
         return;
     }
     
     try {
-        const res = await fetch(`${API}/api/residente/reserva`, {
-            method: 'POST',
+        const url = editingReservaId ? `${API}/api/residente/reservas/${editingReservaId}` : `${API}/api/residente/reserva`;
+        const method = editingReservaId ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         const resData = await res.json();
         if (res.ok) {
-            showToast('success', 'Solicitud enviada', 'Tu reserva está pendiente de aprobación.');
+            showToast('success', editingReservaId ? 'Reserva actualizada' : 'Solicitud enviada', 'Tu reserva ha sido procesada.');
+            editingReservaId = null;
+            document.querySelector('#panel-nueva-reserva button').textContent = 'Solicitar reserva';
             showPanel('mis-reservas', null, 'reservas');
         } else {
             showToast('error', 'Error', resData.message);
@@ -372,7 +384,132 @@ async function submitReserva() {
     }
 }
 
-// Redirect logout to Login.html
+async function loadResidentReservas() {
+    const container = document.getElementById('reservas-residentes-list');
+    if (!container) return;
+    container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">Cargando tus reservas...</div>';
+    
+    try {
+        const res = await fetch(`${API}/api/residente/reservas/${currentUser.id}`);
+        const data = await res.json();
+        if (!data.length) {
+            container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">No tienes reservas registradas.</div>';
+            return;
+        }
+        
+        const badgeClass = { pendiente:'badge-yellow', aprobada:'badge-green', rechazada:'badge-red' };
+        const iconMap = { 'Salón Social':'🎉', 'Piscina':'🏊', 'Gimnasio':'🏋️', 'Área BBQ':'🍖' };
+        
+        container.innerHTML = data.map(r => `
+            <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <div style="width:48px;height:48px;background:#f0f4f9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">${iconMap[r.area]||'📅'}</div>
+                  <div>
+                    <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">${r.area}</div>
+                    <div style="font-size:12.5px;color:#8a9ab5;">📅 ${new Date(r.fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'})} · ${r.hora_inicio} – ${r.hora_fin}</div>
+                  </div>
+                </div>
+                <div style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                  <span class="badge ${badgeClass[r.estado]||'badge-gray'}">${r.estado}</span>
+                  <div style="display:flex; gap:6px;">
+                    ${r.estado === 'pendiente' ? `<button class="btn-secondary btn-sm" onclick="editReserva(${JSON.stringify(r).replace(/"/g, '&quot;')})">Editar</button>` : ''}
+                    ${r.estado === 'pendiente' ? `<button class="btn-danger btn-sm" onclick="cancelReserva(${r.id})">Cancelar</button>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#c0392b;">Error al cargar reservas.</div>';
+    }
+}
+
+async function cancelReserva(id) {
+    confirmAction('¿Cancelar reserva?', 'Esta acción eliminará tu solicitud de reserva.', async () => {
+        try {
+            const res = await fetch(`${API}/api/residente/reservas/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('success', 'Reserva cancelada', 'Tu solicitud ha sido eliminada.');
+                loadResidentReservas();
+            }
+        } catch (e) { showToast('error', 'Error', 'No se pudo cancelar la reserva.'); }
+    });
+}
+
+function editReserva(r) {
+    editingReservaId = r.id;
+    selectedArea = Object.keys(areaMapReverse).find(k => areaMapReverse[k] === r.area) || 'salon';
+    
+    // Select visual area
+    document.querySelectorAll('[id^="area-"]').forEach(d => {
+        d.classList.remove('sel');
+        d.style.borderColor = '#dde5ef';
+        d.style.background = '#fff';
+    });
+    const areaEl = document.getElementById('area-' + selectedArea);
+    if (areaEl) {
+        areaEl.classList.add('sel');
+        areaEl.style.borderColor = '#3b9eff';
+        areaEl.style.background = '#f0f7ff';
+    }
+
+    selectedDate = r.fecha.split('T')[0];
+    document.getElementById('selected-date-display').textContent = new Date(selectedDate).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'});
+    document.getElementById('res-hora').value = r.hora_inicio.substring(0,5);
+    document.getElementById('res-hora-fin').value = r.hora_fin.substring(0,5);
+    // Optional: add personas and desc if they were saved (not in current schema but we can try)
+    
+    document.querySelector('#panel-nueva-reserva button').textContent = 'Guardar cambios';
+    showPanel('nueva-reserva', null, 'reservas');
+}
+
+const areaMapReverse = { 'salon': 'Salón Social', 'piscina': 'Piscina', 'gym': 'Gimnasio', 'bbq': 'Área BBQ' };
+
+// ── CALENDAR LOGIC ───────────────────────────────────────────
+function renderCalendar() {
+    const container = document.getElementById('cal-grid-container');
+    const title = document.getElementById('cal-month-year');
+    if (!container || !title) return;
+
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    title.textContent = `${months[currentMonth]} ${currentYear}`;
+
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Start with empty days (adjusting Sunday=0 to Monday=1 or just keeping it)
+    let html = '';
+    const emptyDays = (firstDay === 0) ? 6 : firstDay - 1; // Start on Monday
+    for (let i = 0; i < emptyDays; i++) html += '<div class="cal-day past"></div>';
+
+    const today = new Date();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isPast = new Date(currentYear, currentMonth, d) < today.setHours(0,0,0,0);
+        const isToday = new Date().toDateString() === new Date(currentYear, currentMonth, d).toDateString();
+        const isSelected = selectedDate === dateStr;
+
+        html += `<div class="cal-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected-day' : ''}" 
+                     onclick="${isPast ? '' : `selectCalendarDate('${dateStr}')`}"
+                     style="${isSelected ? 'background:#0f2d52;color:#fff;' : ''}">${d}</div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.changeMonth = function(offset) {
+    currentMonth += offset;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+};
+
+window.selectCalendarDate = function(dateStr) {
+    selectedDate = dateStr;
+    const dateObj = new Date(dateStr + 'T12:00:00'); // Use noon to avoid TZ issues
+    document.getElementById('selected-date-display').textContent = dateObj.toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'});
+    renderCalendar();
+};
 function confirmLogout() { 
     confirmAction('¿Cerrar sesión?', 'Tu sesión será cerrada y serás redirigido al inicio.', () => {
         sessionStorage.removeItem('condoUser');
@@ -389,6 +526,7 @@ window.showPanel = function(id, navBtn, menuId) {
     if (id === 'mi-perfil') loadResidentProfile();
     if (id === 'historial-pagos' || id === 'estado-cuenta') loadResidentPagos();
     if (id === 'mis-incidencias') loadResidentIncidencias();
+    if (id === 'mis-reservas') loadResidentReservas();
     if (id === 'anuncios') loadAnuncios();
 };
 

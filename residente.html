@@ -147,6 +147,7 @@ body { background: #f0f4f9; }
 .cal-day.today { background: #0f2d52; color: #fff; font-weight: 700; }
 .cal-day.has-event { background: #e6f1fb; color: #1a6fc4; font-weight: 600; }
 .cal-day.past { color: #b0bac8; }
+.cal-day.selected-day { background: #0f2d52 !important; color: #fff !important; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -587,7 +588,7 @@ body { background: #f0f4f9; }
               <div style="font-size:11.5px;color:#8a9ab5;margin-top:3px;">Aforo: 25 personas</div>
             </div>
           </div>
-          <div class="form-group"><label class="form-label">Fecha *</label><input class="form-input" type="date" id="res-fecha"/></div>
+          <div class="form-group"><label class="form-label">Fecha seleccionada</label><div id="selected-date-display" style="background:#f0f4f9;border-radius:8px;padding:12px;font-size:14px;font-weight:700;color:#0f2d52;">Selecciona un día en el calendario →</div></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group"><label class="form-label">Hora inicio *</label><select class="form-input form-select" id="res-hora"><option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option><option>20:00</option></select></div>
             <div class="form-group"><label class="form-label">Hora fin *</label><select class="form-input form-select" id="res-hora-fin"><option>10:00</option><option>11:00</option><option>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>22:00</option></select></div>
@@ -603,11 +604,10 @@ body { background: #f0f4f9; }
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;">
             <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:16px;">Disponibilidad – Salón Social</div>
-            <!-- Mini calendar header -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-              <button style="background:none;border:none;cursor:pointer;color:#6b7c93;font-size:18px;">‹</button>
-              <div style="font-size:13.5px;font-weight:700;color:#0f2d52;">Abril 2026</div>
-              <button style="background:none;border:none;cursor:pointer;color:#6b7c93;font-size:18px;">›</button>
+              <button style="background:none;border:none;cursor:pointer;color:#6b7c93;font-size:18px;" onclick="changeMonth(-1)">‹</button>
+              <div style="font-size:13.5px;font-weight:700;color:#0f2d52;" id="cal-month-year">Abril 2026</div>
+              <button style="background:none;border:none;cursor:pointer;color:#6b7c93;font-size:18px;" onclick="changeMonth(1)">›</button>
             </div>
             <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px;">
               <div style="text-align:center;font-size:10.5px;font-weight:700;color:#8a9ab5;padding:4px;">L</div>
@@ -618,17 +618,8 @@ body { background: #f0f4f9; }
               <div style="text-align:center;font-size:10.5px;font-weight:700;color:#8a9ab5;padding:4px;">S</div>
               <div style="text-align:center;font-size:10.5px;font-weight:700;color:#8a9ab5;padding:4px;">D</div>
             </div>
-            <div class="cal-grid">
-              <!-- Week 1 -->
-              <div class="cal-day past" style="color:#d0d8e4;"></div><div class="cal-day past" style="color:#d0d8e4;"></div><div class="cal-day past">1</div><div class="cal-day past">2</div><div class="cal-day past">3</div><div class="cal-day past">4</div><div class="cal-day past">5</div>
-              <!-- Week 2 -->
-              <div class="cal-day past">6</div><div class="cal-day past">7</div><div class="cal-day past">8</div><div class="cal-day past">9</div><div class="cal-day past">10</div><div class="cal-day past">11</div><div class="cal-day past">12</div>
-              <!-- Week 3 -->
-              <div class="cal-day past">13</div><div class="cal-day past">14</div><div class="cal-day past">15</div><div class="cal-day past">16</div><div class="cal-day past">17</div><div class="cal-day past">18</div><div class="cal-day past">19</div>
-              <!-- Week 4 -->
-              <div class="cal-day past">20</div><div class="cal-day past">21</div><div class="cal-day past">22</div><div class="cal-day past">23</div><div class="cal-day past">24</div><div class="cal-day past">25</div><div class="cal-day today">26</div>
-              <!-- Week 5 -->
-              <div class="cal-day">27</div><div class="cal-day has-event">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day" style="color:#d0d8e4;"></div><div class="cal-day" style="color:#d0d8e4;"></div><div class="cal-day" style="color:#d0d8e4;"></div>
+            <div class="cal-grid" id="cal-grid-container">
+              <!-- Se generará dinámicamente -->
             </div>
             <div style="display:flex;gap:14px;margin-top:12px;font-size:11.5px;">
               <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#e6f1fb;border-radius:3px;"></div><span style="color:#6b7c93;">Reservado</span></div>
@@ -653,52 +644,8 @@ body { background: #f0f4f9; }
         <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Mis Reservas</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Historial de reservas · Apto 7C</div></div>
         <button class="btn-primary" onclick="showPanel('nueva-reserva',null,'reservas')">+ Nueva reserva</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #b2e8cd;padding:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:14px;">
-              <div style="width:48px;height:48px;background:#e6f7ee;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">🎉</div>
-              <div>
-                <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">Salón Social</div>
-                <div style="font-size:12.5px;color:#8a9ab5;">📅 28 de abril 2026 · 18:00 – 22:00</div>
-                <div style="font-size:12.5px;color:#8a9ab5;margin-top:2px;">👥 30 personas estimadas</div>
-              </div>
-            </div>
-            <div style="text-align:right;">
-              <span class="badge badge-green" style="margin-bottom:8px;display:flex;">Aprobada</span>
-              <button class="btn-danger btn-sm" onclick="confirmAction('¿Cancelar reserva?','Esta acción no se puede deshacer.')">Cancelar</button>
-            </div>
-          </div>
-        </div>
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #b2e8cd;padding:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:14px;">
-              <div style="width:48px;height:48px;background:#e6f1fb;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">🏊</div>
-              <div>
-                <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">Piscina</div>
-                <div style="font-size:12.5px;color:#8a9ab5;">📅 20 de abril 2026 · 10:00 – 12:00</div>
-                <div style="font-size:12.5px;color:#8a9ab5;margin-top:2px;">👥 4 personas</div>
-              </div>
-            </div>
-            <span class="badge badge-green">Completada</span>
-          </div>
-        </div>
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:14px;">
-              <div style="width:48px;height:48px;background:#fff0f0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">🏋️</div>
-              <div>
-                <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">Gimnasio</div>
-                <div style="font-size:12.5px;color:#8a9ab5;">📅 26 de abril 2026 · 07:00 – 09:00</div>
-                <div style="font-size:12.5px;color:#8a9ab5;margin-top:2px;">👥 1 persona</div>
-              </div>
-            </div>
-            <div style="text-align:right;">
-              <span class="badge badge-red" style="margin-bottom:8px;display:flex;">Rechazada</span>
-              <div style="font-size:11.5px;color:#8a9ab5;">Área reservada en ese horario</div>
-            </div>
-          </div>
-        </div>
+      <div id="reservas-residentes-list" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;">Cargando tus reservas...</div>
       </div>
     </div>
 

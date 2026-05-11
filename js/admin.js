@@ -2,7 +2,7 @@
    admin.js — CondoManager Admin Panel JavaScript
    ═══════════════════════════════════════════════════════════════ */
 
-const API = 'http://localhost:5000';
+const API = 'http://localhost:5005';
 
 // ── NAVIGATION ────────────────────────────────────────────────
 const pageInfo = {
@@ -51,6 +51,7 @@ function showPanel(id, navBtn, menuId) {
   if (id === 'lista-pagos')       loadPagos();
   if (id === 'historial-pagos')   loadHistorialPagos();
   if (id === 'registrar-pago')    loadResidentesSelect();
+  if (id === 'lista-reservas')    loadReservas();
 }
 
 function toggleMenu(id) {
@@ -377,11 +378,23 @@ async function loadPagos() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>';
   try {
     const res  = await fetch(API + '/api/pagos');
-    const data = await res.json();
+    let data = await res.json();
     if (!Array.isArray(data) || !data.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:24px;">No hay pagos registrados.</td></tr>';
       return;
     }
+
+    // Filtro por estado
+    const filtroEstado = document.getElementById('pago-filtro-estado')?.value;
+    if (filtroEstado) {
+      data = data.filter(p => (p.Estado || '').toLowerCase() === filtroEstado.toLowerCase());
+    }
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:24px;">No hay pagos que coincidan con el filtro.</td></tr>';
+      return;
+    }
+
     const badge = { pagado:'badge-green', pendiente:'badge-yellow', vencido:'badge-red' };
     const capEst = e => e ? e.charAt(0).toUpperCase()+e.slice(1) : '—';
     tbody.innerHTML = data.map(p => `<tr>
@@ -404,11 +417,23 @@ async function loadHistorialPagos() {
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando...</td></tr>';
   try {
     const res  = await fetch(API + '/api/pagos');
-    const data = await res.json();
+    let data = await res.json();
     if (!Array.isArray(data) || !data.length) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:24px;">No hay registros.</td></tr>';
       return;
     }
+
+    // Filtro por mes (YYYY-MM)
+    const filtroMes = document.getElementById('historial-filtro-mes')?.value;
+    if (filtroMes) {
+      data = data.filter(p => p.FechaPago && p.FechaPago.substring(0, 7) === filtroMes);
+    }
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#8a9ab5;padding:24px;">No hay registros para este mes.</td></tr>';
+      return;
+    }
+
     const badge = { Pagado:'badge-green', Pendiente:'badge-yellow', Vencido:'badge-red' };
     tbody.innerHTML = data.map((p, i) => `<tr>
       <td style="color:#8a9ab5;">#${String(p.IdPago).padStart(4,'0')}</td>
@@ -684,6 +709,73 @@ async function toggleUserStatus(id, activo) {
     });
     if (res.ok) { loadUsuarios(); showToast('success', 'Estado actualizado', 'El estado del usuario ha sido cambiado.'); }
   } catch(e) { showToast('error', 'Error', 'No se pudo cambiar el estado.'); }
+}
+
+// ── RESERVAS ──────────────────────────────────────────────────
+let allReservas = [];
+
+async function loadReservas() {
+  const tbody = document.getElementById('reservas-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:20px;">Cargando reservas...</td></tr>';
+  try {
+    const res  = await fetch(API + '/api/reservas');
+    allReservas = await res.json();
+    if (!allReservas.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#8a9ab5;padding:24px;">No hay reservas registradas.</td></tr>';
+      return;
+    }
+    const badge = { pendiente:'badge-yellow', aprobada:'badge-green', rechazada:'badge-red' };
+    tbody.innerHTML = allReservas.map(r => `<tr>
+      <td><span style="font-weight:600;">${r.ResidenteNombre||'Anónimo'}</span></td>
+      <td>${r.Area||'—'}</td>
+      <td>${r.Fecha ? new Date(r.Fecha).toLocaleDateString('es-DO') : '—'}</td>
+      <td>${r.Hora||'—'}</td>
+      <td>—</td>
+      <td><span class="badge ${badge[r.Estado]||'badge-gray'}">${r.Estado}</span></td>
+      <td>
+        <button class="${r.Estado==='pendiente'?'btn-accent':'btn-secondary'} btn-sm" onclick="abrirGestionReserva(${r.IdReserva})">
+          ${r.Estado==='pendiente'?'Revisar':'Gestionar'}
+        </button>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#c0392b;padding:20px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function abrirGestionReserva(id) {
+  const r = allReservas.find(x => x.IdReserva === id);
+  if (!r) return;
+  
+  document.getElementById('res-gestion-titulo').textContent = 'Gestión de Reserva #RES-' + String(id).padStart(3, '0');
+  document.getElementById('res-gestion-nombre').textContent = r.ResidenteNombre || 'Anónimo';
+  document.getElementById('res-gestion-apto').textContent   = 'Apto ' + (r.Apartamento || '—');
+  document.getElementById('res-gestion-area').textContent   = r.Area || '—';
+  document.getElementById('res-gestion-fecha').textContent     = r.Fecha ? new Date(r.Fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'}) : '—';
+  document.getElementById('res-gestion-hora').textContent      = r.Hora || '—';
+  document.getElementById('res-gestion-personas').textContent  = '—';
+  document.getElementById('res-gestion-notas').textContent     = 'Información no disponible en el sistema.';
+  document.getElementById('res-gestion-comentario').value      = '';
+  
+  document.getElementById('btn-aprobar-reserva').onclick = () => actualizarEstadoReserva(id, 'aprobada');
+  document.getElementById('btn-rechazar-reserva').onclick = () => actualizarEstadoReserva(id, 'rechazada');
+  
+  showPanel('aprobar-reservas', null, 'reservas');
+}
+
+async function actualizarEstadoReserva(id, nuevoEstado) {
+  try {
+    const res = await fetch(`${API}/api/reservas/${id}/estado`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+    if (res.ok) {
+      showToast('success', 'Reserva ' + nuevoEstado, 'El residente será notificado.');
+      loadReservas();
+      setTimeout(() => showPanel('lista-reservas', null, 'reservas'), 1000);
+    }
+  } catch(e) { showToast('error', 'Error', 'No se pudo actualizar la reserva.'); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────
