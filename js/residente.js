@@ -1,10 +1,11 @@
-const API = "http://localhost:5005";
+const API = "http://100.115.229.107:5005";
 let currentUser = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
 let residentData = null;
 let selectedDate = '';
 let editingReservaId = null;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
+let currentAreaReservas = []; // Para sombrear fechas ocupadas en el área seleccionada
 async function init() {
   console.log("Iniciando panel de residente...", currentUser);
   if (!currentUser) {
@@ -368,6 +369,17 @@ function selectArea(area, el) {
     el.classList.add('sel');
     el.style.borderColor = '#3b9eff';
     el.style.background = '#f0f7ff';
+    
+    // Cargar fechas ocupadas para esta área específica
+    loadOccupiedDates(area);
+}
+
+async function loadOccupiedDates(area) {
+    try {
+        const res = await fetch(`${API}/api/area/${area}/fechas-ocupadas`);
+        currentAreaReservas = await res.json();
+        renderCalendar(); // Refrescar para sombrear
+    } catch (e) { console.error("Error al cargar fechas ocupadas:", e); }
 }
 
 async function submitPago() {
@@ -410,8 +422,8 @@ async function submitReserva() {
         descripcion: document.getElementById('res-desc').value
     };
     
-    if (!data.area || !data.fecha) {
-        showToast('error', 'Campos incompletos', 'Selecciona un área y una fecha en el calendario.');
+    if (!data.area || !data.fecha || !data.hora_inicio || !data.hora_fin) {
+        showToast('error', 'Campos incompletos', 'Selecciona área, fecha y horario (inicio y fin).');
         return;
     }
     
@@ -425,16 +437,19 @@ async function submitReserva() {
             body: JSON.stringify(data)
         });
         const resData = await res.json();
+        
         if (res.ok) {
             showToast('success', editingReservaId ? 'Reserva actualizada' : 'Solicitud enviada', 'Tu reserva ha sido procesada.');
             editingReservaId = null;
             document.querySelector('#panel-nueva-reserva button').textContent = 'Solicitar reserva';
             showPanel('mis-reservas', null, 'reservas');
         } else {
-            showToast('error', 'Error', resData.message);
+            // Manejo específico para el error 409 (Conflicto de disponibilidad)
+            const title = res.status === 409 ? 'No disponible' : 'Error';
+            showToast('error', title, resData.message || 'No se pudo procesar la reserva.');
         }
     } catch (e) {
-        showToast('error', 'Error de conexión', 'No se pudo enviar la solicitud.');
+        showToast('error', 'Error de conexión', 'No se pudo conectar con el servidor.');
     }
 }
 
@@ -452,26 +467,29 @@ async function loadResidentReservas() {
         }
         
         const badgeClass = { pendiente:'badge-yellow', aprobada:'badge-green', rechazada:'badge-red' };
-        const iconMap = { 'Salón Social':'', 'Piscina':'', 'Gimnasio':'', 'Área BBQ':'' };
         
         container.innerHTML = data.map(r => `
-            <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
+            <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;margin-bottom:12px;">
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:14px;">
-                  <div style="width:48px;height:48px;background:#f0f4f9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">${iconMap[r.area]||''}</div>
+                  <div style="width:48px;height:48px;background:#f0f4f9;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">📋</div>
                   <div>
                     <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:3px;">${r.area}</div>
-                    <div style="font-size:12.5px;color:#8a9ab5;"> ${new Date(r.fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'})} · ${r.hora_inicio} – ${r.hora_fin}</div>
+                    <div style="font-size:12.5px;color:#8a9ab5;"> 
+                        ${new Date(r.fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'})} · 
+                        ${r.hora_inicio.substring(0,5)} – ${r.hora_fin.substring(0,5)}
+                    </div>
                   </div>
                 </div>
                 <div style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                   <span class="badge ${badgeClass[r.estado]||'badge-gray'}">${r.estado}</span>
                   <div style="display:flex; gap:6px;">
-                    ${r.estado === 'pendiente' ? `<button class="btn-secondary btn-sm" onclick="editReserva(${JSON.stringify(r).replace(/"/g, '&quot;')})">Editar</button>` : ''}
+                    ${r.estado === 'pendiente' ? `<button class="btn-secondary btn-sm" onclick='editReserva(${JSON.stringify(r)})'>Editar</button>` : ''}
                     ${r.estado === 'pendiente' ? `<button class="btn-danger btn-sm" onclick="cancelReserva(${r.id})">Cancelar</button>` : ''}
                   </div>
                 </div>
               </div>
+              ${r.descripcion ? `<div style="margin-top:12px; font-size:12px; color:#4a5a72; background:#f8fafc; padding:8px; border-radius:6px;"><b>Nota:</b> ${r.descripcion} (${r.personas} personas)</div>` : ''}
             </div>
         `).join('');
     } catch (e) {
@@ -509,10 +527,16 @@ function editReserva(r) {
     }
 
     selectedDate = r.fecha.split('T')[0];
-    document.getElementById('selected-date-display').textContent = new Date(selectedDate).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'});
+    const dateParts = selectedDate.split('-');
+    currentYear = parseInt(dateParts[0]);
+    currentMonth = parseInt(dateParts[1]) - 1;
+    renderCalendar();
+
+    document.getElementById('selected-date-display').textContent = new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'});
     document.getElementById('res-hora').value = r.hora_inicio.substring(0,5);
     document.getElementById('res-hora-fin').value = r.hora_fin.substring(0,5);
-    // Optional: add personas and desc if they were saved (not in current schema but we can try)
+    document.getElementById('res-personas').value = r.personas || '';
+    document.getElementById('res-desc').value = r.descripcion || '';
     
     document.querySelector('#panel-nueva-reserva button').textContent = 'Guardar cambios';
     showPanel('nueva-reserva', null, 'reservas');
@@ -543,10 +567,14 @@ function renderCalendar() {
         const isPast = new Date(currentYear, currentMonth, d) < today.setHours(0,0,0,0);
         const isToday = new Date().toDateString() === new Date(currentYear, currentMonth, d).toDateString();
         const isSelected = selectedDate === dateStr;
+        const isOccupied = currentAreaReservas.includes(dateStr);
 
-        html += `<div class="cal-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected-day' : ''}" 
+        let classes = `cal-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected-day' : ''}`;
+        if (isOccupied && !isSelected) classes += ' has-event';
+
+        html += `<div class="${classes}" 
                      onclick="${isPast ? '' : `selectCalendarDate('${dateStr}')`}"
-                     style="${isSelected ? 'background:#0f2d52;color:#fff;' : ''}">${d}</div>`;
+                     style="${isSelected ? 'background:#0f2d52;color:#fff;' : (isOccupied ? 'background:#e6f1fb;color:#1a6fc4;font-weight:600;' : '')}">${d}</div>`;
     }
     container.innerHTML = html;
 }
@@ -564,13 +592,7 @@ window.selectCalendarDate = function(dateStr) {
     document.getElementById('selected-date-display').textContent = dateObj.toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'});
     renderCalendar();
 };
-function confirmLogout() { 
-    confirmAction('¿Cerrar sesión?', 'Tu sesión será cerrada y serás redirigido al inicio.', () => {
-        sessionStorage.removeItem('condoUser');
-        showToast('success', 'Sesión cerrada', 'Hasta pronto.');
-        setTimeout(() => window.location.href = 'login.html', 1000);
-    }); 
-}
+
 
 // Intercept showPanel to load data
 const originalShowPanel = window.showPanel;
@@ -704,7 +726,7 @@ function confirmAction(title, body, onConfirm) {
   document.getElementById('modal-title').textContent = title || 'Confirmar';
   document.getElementById('modal-body').textContent  = body  || '¿Está seguro?';
   document.getElementById('modal-overlay').classList.add('open');
-  document.getElementById('modal-confirm-btn').onclick = () => {
+  document.getElementById('modal-ok').onclick = () => {
     document.getElementById('modal-overlay').classList.remove('open');
     if (onConfirm) onConfirm();
   };

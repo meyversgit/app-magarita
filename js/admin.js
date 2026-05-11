@@ -2,7 +2,7 @@
    admin.js — CondoManager Admin Panel JavaScript
    ═══════════════════════════════════════════════════════════════ */
 
-const API = "http://127.0.0.1:5005";
+const API = "http://100.115.229.107:5005";
 
 // ── NAVIGATION ────────────────────────────────────────────────
 const pageInfo = {
@@ -889,8 +889,8 @@ async function loadReservas() {
       <td><span style="font-weight:600;">${r.ResidenteNombre||'Anónimo'}</span></td>
       <td>${r.Area||'—'}</td>
       <td>${r.Fecha ? new Date(r.Fecha).toLocaleDateString('es-DO') : '—'}</td>
-      <td>${r.Hora||'—'}</td>
-      <td>—</td>
+      <td>${r.Hora ? r.Hora.substring(0,5) : '—'} – ${r.HoraFin ? r.HoraFin.substring(0,5) : '—'}</td>
+      <td>${r.Personas||'—'}</td>
       <td><span class="badge ${badge[r.Estado]||'badge-gray'}">${r.Estado}</span></td>
       <td>
         <button class="${r.Estado==='pendiente'?'btn-accent':'btn-secondary'} btn-sm" onclick="abrirGestionReserva(${r.IdReserva})">
@@ -913,9 +913,9 @@ function abrirGestionReserva(id) {
   document.getElementById('res-gestion-apto').textContent   = 'Apto ' + (r.Apartamento || '—');
   document.getElementById('res-gestion-area').textContent   = r.Area || '—';
   document.getElementById('res-gestion-fecha').textContent     = r.Fecha ? new Date(r.Fecha).toLocaleDateString('es-DO', {day:'numeric', month:'long', year:'numeric'}) : '—';
-  document.getElementById('res-gestion-hora').textContent      = r.Hora || '—';
-  document.getElementById('res-gestion-personas').textContent  = '—';
-  document.getElementById('res-gestion-notas').textContent     = 'Información no disponible en el sistema.';
+  document.getElementById('res-gestion-hora').textContent      = `${r.Hora ? r.Hora.substring(0,5) : '—'} a ${r.HoraFin ? r.HoraFin.substring(0,5) : '—'}`;
+  document.getElementById('res-gestion-personas').textContent  = r.Personas || '—';
+  document.getElementById('res-gestion-notas').textContent     = r.Descripcion || 'Sin notas adicionales.';
   document.getElementById('res-gestion-comentario').value      = '';
   
   document.getElementById('btn-aprobar-reserva').onclick = () => actualizarEstadoReserva(id, 'aprobada');
