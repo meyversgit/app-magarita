@@ -1,4 +1,4 @@
-const API = "http://100.115.229.107:5005";
+// API defined in config.js (loaded before this script)
 let currentUser = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
 let residentData = null;
 let selectedDate = '';
@@ -37,21 +37,33 @@ async function loadResidentBaseData() {
     console.log("Datos recibidos:", residentData);
     
     const fullName = `${residentData.Nombre || ''} ${residentData.Apellido || ''}`.trim() || currentUser.nombre || 'Residente';
-    const aptoStr = residentData.Apartamento ? `Apto ${residentData.Apartamento}` : 'Sin apartamento';
+    const apto = residentData.Apartamento;
+    const aptoStr = apto ? `Apto ${apto}` : 'Sin apartamento';
+    const aptoFull = apto ? `Apartamento ${apto}` : 'Sin apartamento';
     
     // Top bar & Sidebar
     if (document.getElementById('user-name-side')) document.getElementById('user-name-side').textContent = fullName;
     if (document.getElementById('user-name-top'))  document.getElementById('user-name-top').textContent  = fullName;
-    if (document.getElementById('user-apto-side')) document.getElementById('user-apto-side').textContent = aptoStr;
+    if (document.getElementById('user-apto-side')) document.getElementById('user-apto-side').textContent = aptoFull;
     if (document.getElementById('user-apto-top'))  document.getElementById('user-apto-top').textContent  = `Residente · ${aptoStr}`;
     
     // Dashboard Welcome
     if (document.getElementById('welcome-name'))    document.getElementById('welcome-name').textContent = `Bienvenido, ${residentData.Nombre || currentUser.nombre} `;
-    if (document.getElementById('welcome-details')) document.getElementById('welcome-details').textContent = `${aptoStr} · Piso ${residentData.Piso || '—'} · Residencial Las Palmas`;
+    if (document.getElementById('welcome-details')) document.getElementById('welcome-details').textContent = apto ? `${aptoStr} · Piso ${residentData.Piso || '—'} · Residencial Las Palmas` : 'Sin apartamento asignado · Contacta al administrador';
     
     // Profile Panel
     if (document.getElementById('profile-name')) document.getElementById('profile-name').textContent = fullName;
-    if (document.getElementById('profile-apto')) document.getElementById('profile-apto').textContent = `Residente · ${aptoStr}`;
+    if (document.getElementById('profile-apto')) document.getElementById('profile-apto').textContent = apto ? `Residente · ${aptoFull}` : 'Residente · Sin apartamento';
+
+    // Dynamic subtitles on section headers
+    const now = new Date().toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+    const sub = apto ? `${aptoFull} · ${now}` : 'Apartamento no asignado';
+    if (document.getElementById('estado-cuenta-sub'))   document.getElementById('estado-cuenta-sub').textContent   = sub;
+    if (document.getElementById('historial-pagos-sub')) document.getElementById('historial-pagos-sub').textContent = apto ? aptoFull : 'Sin apartamento';
+    if (document.getElementById('mis-reservas-sub'))    document.getElementById('mis-reservas-sub').textContent    = apto ? `Historial de reservas · ${aptoStr}` : 'Sin apartamento asignado';
+
+    // Block restricted sections if no apartment
+    applyApartmentGuard(apto);
     
     // Calculate initials correctly
     const firstInitial = (residentData.Nombre || currentUser.nombre || '?')[0];
@@ -107,7 +119,14 @@ async function loadResidentDashboard() {
   }
   
   if (kpiMontoPendiente) kpiMontoPendiente.textContent = `RD$${(residentData.Cuota || 4500).toLocaleString()}`;
-  if (kpiVenceDesc) kpiVenceDesc.textContent = stats.pagosPendientes > 0 ? '⏰ Pago vencido' : '⏰ Próximo vencimiento: 5 mayo';
+  
+  // Fechas dinámicas
+  const today = new Date();
+  const mesActual = today.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+  const nextFive = new Date(today.getFullYear(), today.getMonth() + (today.getDate() > 5 ? 1 : 0), 5);
+  const fechaVence = `Vence ${nextFive.toLocaleDateString('es-DO', { day:'numeric', month:'long' })}`;
+  
+  if (kpiVenceDesc) kpiVenceDesc.textContent = stats.pagosPendientes > 0 ? '⏰ Pago vencido' : `⏰ Próximo: ${fechaVence}`;
   if (kpiReservasCount) kpiReservasCount.textContent = stats.reservasActivas || 0;
   if (kpiReservasDesc) kpiReservasDesc.textContent = stats.reservasActivas > 0 ? ' Tienes reservas activas' : 'Sin reservas próximas';
   if (kpiIncidenciasCount) kpiIncidenciasCount.textContent = stats.incidenciasActivas || 0;
@@ -234,7 +253,8 @@ async function updateResidentProfile() {
 }
 
 async function loadResidentPagos() {
-    const tbody = document.querySelector('#panel-historial-pagos tbody');
+    const tbody = document.getElementById('historial-pagos-tbody') ||
+                  document.querySelector('#panel-historial-pagos tbody');
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">Cargando...</td></tr>';
     
@@ -242,23 +262,76 @@ async function loadResidentPagos() {
         const res = await fetch(`${API}/api/residente/pagos/${currentUser.id}`);
         const data = await res.json();
         if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">No hay pagos registrados.</td></tr>';
-            return;
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ab5;">No hay pagos registrados.</td></tr>';
+        } else {
+            tbody.innerHTML = data.map(p => `
+                <tr>
+                    <td style="color:#8a9ab5;">#${String(p.IdPago).padStart(4, '0')}</td>
+                    <td>${p.Concepto || 'Mantenimiento Mensual'}</td>
+                    <td style="font-weight:600;">RD$${(p.Monto || 0).toLocaleString()}</td>
+                    <td>${p.MetodoPago || '—'}</td>
+                    <td style="color:#8a9ab5;">${p.Referencia || '—'}</td>
+                    <td>${p.FechaPago ? new Date(p.FechaPago).toLocaleDateString('es-DO') : '—'}</td>
+                    <td><span class="badge ${p.Estado === 'pagado' ? 'badge-green' : 'badge-yellow'}">${p.Estado}</span></td>
+                </tr>
+            `).join('');
         }
-        tbody.innerHTML = data.map(p => `
-            <tr>
-                <td style="color:#8a9ab5;">#${String(p.IdPago).padStart(4, '0')}</td>
-                <td>${p.Concepto || 'Mantenimiento Mensual'}</td>
-                <td style="font-weight:600;">RD$${(p.Monto || 0).toLocaleString()}</td>
-                <td>${p.MetodoPago || '—'}</td>
-                <td style="color:#8a9ab5;">${p.Referencia || '—'}</td>
-                <td>${p.FechaPago ? new Date(p.FechaPago).toLocaleDateString() : '—'}</td>
-                <td><span class="badge ${p.Estado === 'pagado' ? 'badge-green' : 'badge-yellow'}">${p.Estado}</span></td>
-            </tr>
-        `).join('');
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c0392b;padding:20px;">Error al cargar pagos.</td></tr>';
     }
+    
+    // Actualizar estado de cuenta después de cargar pagos
+    await loadEstadoCuenta();
+}
+
+async function loadEstadoCuenta() {
+    if (!residentData) return;
+    const stats = residentData.stats || {};
+    const cuota = residentData.Cuota || 4500;
+    const apto = residentData.Apartamento;
+    
+    // Fecha dinámica
+    const today = new Date();
+    const mesNombre = today.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+    const nextFive = new Date(today.getFullYear(), today.getMonth() + (today.getDate() > 5 ? 1 : 0), 5);
+    const venceLabel = `Vence ${nextFive.toLocaleDateString('es-DO', { day:'numeric', month:'long', year:'numeric' })}`;
+    const periodoLabel = today.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+    const periodoCapitalized = periodoLabel.charAt(0).toUpperCase() + periodoLabel.slice(1);
+    
+    const totalPagado = stats.totalPagadoAnio || 0;
+    const montoPendiente = stats.montoPendienteTotal || cuota;
+    const cuotasPagadas = cuota > 0 ? Math.floor(totalPagado / cuota) : 0;
+    const alDia = stats.pagosPendientes === 0;
+    const aptoLabel = apto ? `Apartamento ${apto}` : 'Sin apartamento';
+    
+    // Estado de cuenta - tarjetas superiores
+    const ecSaldo   = document.getElementById('ec-saldo-monto');
+    const ecVence   = document.getElementById('ec-saldo-vence');
+    const ecPagado  = document.getElementById('ec-pagado-monto');
+    const ecCuotas  = document.getElementById('ec-cuotas-info');
+    const ecCuotaM  = document.getElementById('ec-cuota-mensual');
+    const ecDesglose = document.getElementById('ec-desglose-title');
+    const ecPayMonto = document.getElementById('ec-pay-monto');
+    const ecPayInfo  = document.getElementById('ec-pay-info');
+    
+    if (ecSaldo)   ecSaldo.textContent   = `RD$${montoPendiente.toLocaleString()}`;
+    if (ecVence)   ecVence.textContent   = alDia ? 'Al día ✔' : venceLabel;
+    if (ecPagado)  ecPagado.textContent  = `RD$${totalPagado.toLocaleString()}`;
+    if (ecCuotas)  ecCuotas.textContent  = cuotasPagadas > 0 ? `${cuotasPagadas} cuota${cuotasPagadas!==1?'s':''} · ${alDia?'Al día':'Pendiente'}` : 'Sin pagos registrados';
+    if (ecCuotaM)  ecCuotaM.textContent  = `RD$${cuota.toLocaleString()}`;
+    if (ecDesglose) ecDesglose.textContent = `Desglose de cargos · ${periodoCapitalized}`;
+    if (ecPayMonto) ecPayMonto.textContent = `RD$${cuota.toLocaleString()}`;
+    if (ecPayInfo)  ecPayInfo.textContent  = `${periodoCapitalized} · ${venceLabel}`;
+    
+    // Realizar pago panel
+    const rpMonto   = document.getElementById('rp-monto');
+    const rpPeriodo = document.getElementById('rp-periodo');
+    const rpVence   = document.getElementById('rp-vence');
+    const rpConcepto = document.getElementById('rp-concepto');
+    if (rpMonto)   rpMonto.textContent   = `RD$${cuota.toLocaleString()}`;
+    if (rpPeriodo) rpPeriodo.textContent = periodoCapitalized;
+    if (rpVence)   rpVence.textContent   = venceLabel;
+    if (rpConcepto) rpConcepto.value     = `Mantenimiento mensual · ${periodoCapitalized}`;
 }
 
 async function loadResidentIncidencias() {
@@ -404,6 +477,8 @@ async function submitPago() {
         });
         if (res.ok) {
             showToast('success', 'Pago enviado', 'Tu pago ha sido registrado y está en verificación.');
+            // Refrescar datos para actualizar totales
+            await loadResidentBaseData();
             showPanel('historial-pagos', null, 'pagos');
         } else {
             showToast('error', 'Error', 'No se pudo registrar el pago.');
@@ -418,7 +493,7 @@ async function submitReserva() {
         fecha: selectedDate,
         hora_inicio: document.getElementById('res-hora').value,
         hora_fin: document.getElementById('res-hora-fin').value,
-        personas: document.getElementById('res-personas').value,
+        personas: parseInt(document.getElementById('res-personas').value) || 1,
         descripcion: document.getElementById('res-desc').value
     };
     
@@ -594,17 +669,133 @@ window.selectCalendarDate = function(dateStr) {
 };
 
 
+// ── APARTMENT GUARD ──────────────────────────────────────────
+const RESTRICTED_PANELS = ['estado-cuenta', 'historial-pagos', 'realizar-pago',
+                           'nueva-reserva', 'mis-reservas',
+                           'reportar-incidencia', 'mis-incidencias'];
+
+function applyApartmentGuard(apto) {
+  const noApto = !apto;
+  RESTRICTED_PANELS.forEach(panelId => {
+    const panel = document.getElementById('panel-' + panelId);
+    if (!panel) return;
+    if (noApto) {
+      // Insert banner if not already there
+      if (!panel.querySelector('.no-apto-banner')) {
+        const banner = document.createElement('div');
+        banner.className = 'no-apto-banner';
+        banner.style.display = 'flex';
+        banner.innerHTML = `⚠️ <span style="margin-left:8px;"><strong>Apartamento no asignado.</strong> El administrador debe asignarte un apartamento antes de que puedas usar esta sección.</span>`;
+        panel.insertBefore(banner, panel.firstChild);
+      } else {
+        panel.querySelector('.no-apto-banner').style.display = 'flex';
+      }
+      // Dim everything after the banner
+      [...panel.children].forEach(child => {
+        if (!child.classList.contains('no-apto-banner')) {
+          child.style.opacity = '0.3';
+          child.style.pointerEvents = 'none';
+        }
+      });
+    } else {
+      const banner = panel.querySelector('.no-apto-banner');
+      if (banner) banner.style.display = 'none';
+      [...panel.children].forEach(child => {
+        if (!child.classList.contains('no-apto-banner')) {
+          child.style.opacity = '';
+          child.style.pointerEvents = '';
+        }
+      });
+    }
+  });
+}
+
 // Intercept showPanel to load data
 const originalShowPanel = window.showPanel;
 window.showPanel = function(id, navBtn, menuId) {
     originalShowPanel(id, navBtn, menuId);
     if (id === 'dashboard') loadResidentDashboard();
     if (id === 'mi-perfil') loadResidentProfile();
-    if (id === 'historial-pagos' || id === 'estado-cuenta') loadResidentPagos();
+    if (id === 'historial-pagos' || id === 'estado-cuenta' || id === 'realizar-pago') {
+        loadResidentPagos();
+        loadEstadoCuenta();
+    }
     if (id === 'mis-incidencias') loadResidentIncidencias();
     if (id === 'mis-reservas') loadResidentReservas();
     if (id === 'anuncios') loadAnuncios();
 };
+
+function loadAnuncios() {
+  if (!currentUser) return;
+  const container = document.getElementById('anuncios-container');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:24px;color:#8a9ab5;font-size:13px;">Cargando anuncios...</div>';
+
+  // Reusar las notificaciones ya cargadas en memoria si existen
+  if (allNotificaciones && allNotificaciones.length) {
+    renderAnunciosPanel(allNotificaciones);
+    return;
+  }
+  // Si no, traerlas del servidor
+  fetch(`${API}/api/notificaciones/${currentUser.id}`)
+    .then(r => r.json())
+    .then(data => {
+      allNotificaciones = data;
+      renderNotifDropdown();
+      renderAnunciosPanel(data);
+    })
+    .catch(() => {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:#c0392b;font-size:13px;">No se pudieron cargar los anuncios.</div>';
+    });
+}
+
+function renderAnunciosPanel(notifs) {
+  const container = document.getElementById('anuncios-container');
+  if (!container) return;
+  // Actualizar subtitulo con conteo
+  const sub = document.getElementById('anuncios-count-sub');
+  const unread = notifs.filter(n => !n.Leida).length;
+  if (sub) sub.textContent = unread > 0 ? `${unread} nuevo${unread > 1 ? 's' : ''} sin leer` : 'Todo al día';
+
+  if (!notifs.length) {
+    container.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;color:#8a9ab5;border:0.5px solid #dde5ef;">No hay anuncios en este momento.</div>';
+    return;
+  }
+
+  const tipoConfig = {
+    anuncio:        { border: '#0d7d45', badge: 'badge-green',  icon: '📢' },
+    pago:           { border: '#534ab7', badge: 'badge-navy',   icon: '💳' },
+    incidencia:     { border: '#e24b4a', badge: 'badge-red',    icon: '🚨' },
+    reserva:        { border: '#3b9eff', badge: 'badge-blue',   icon: '📅' },
+    general:        { border: '#0d7d45', badge: 'badge-green',  icon: '📢' },
+    otro:           { border: '#b07800', badge: 'badge-yellow', icon: '🔧' },
+    // fallbacks:
+    urgente:        { border: '#e24b4a', badge: 'badge-red',    icon: '🚨' },
+    mantenimiento:  { border: '#b07800', badge: 'badge-yellow', icon: '🔧' },
+    evento:         { border: '#3b9eff', badge: 'badge-blue',   icon: '📅' },
+    cobro:          { border: '#534ab7', badge: 'badge-navy',   icon: '💳' },
+  };
+
+  container.innerHTML = notifs.map(n => {
+    const cfg = tipoConfig[n.Tipo] || tipoConfig.general;
+    const fecha = n.FechaCreacion ? new Date(n.FechaCreacion).toLocaleString('es-DO', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const isNew = !n.Leida;
+    return `<div style="background:#fff;border-radius:12px;border:0.5px solid ${n.Leida?'#dde5ef':'#b2d4ff'};padding:22px;border-left:4px solid ${cfg.border};cursor:pointer;"
+      onclick="marcarLeida(${n.IdNotificacion})"
+      onmouseover="this.style.boxShadow='0 4px 16px rgba(15,45,82,0.08)'"
+      onmouseout="this.style.boxShadow='none'">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="badge ${cfg.badge}">${cfg.icon} ${n.Tipo.charAt(0).toUpperCase()+n.Tipo.slice(1)}</span>
+          ${isNew ? '<span style="font-size:11.5px;background:#e6f1fb;color:#1a6fc4;padding:2px 8px;border-radius:99px;font-weight:700;">NUEVO</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:#8a9ab5;">${fecha}</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">${n.Titulo}</div>
+      <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">${n.Mensaje||''}</div>
+    </div>`;
+  }).join('');
+}
 
 // ── PROFILE MODAL ─────────────────────────────────────────────
 function openProfileModal() {
@@ -653,15 +844,32 @@ async function loadNotificaciones() {
 function renderNotifDropdown() {
   const list  = document.getElementById('notif-list');
   const badge = document.getElementById('notif-badge');
+  const badgeAnuncios = document.getElementById('badge-anuncios');
   if (!list || !badge) return;
   const unread = allNotificaciones.filter(n => !n.Leida);
   badge.textContent = unread.length;
   badge.style.display = unread.length > 0 ? 'flex' : 'none';
+  if (badgeAnuncios) {
+    badgeAnuncios.textContent = unread.length;
+    badgeAnuncios.style.display = unread.length > 0 ? 'inline-block' : 'none';
+  }
   if (!allNotificaciones.length) {
     list.innerHTML = '<div style="padding:24px;text-align:center;color:#8a9ab5;font-size:13px;">No hay notificaciones.</div>';
     return;
   }
-  const tipoColor = { general:'#3b9eff', urgente:'#e24b4a', mantenimiento:'#b07800', evento:'#0d7d45', cobro:'#534ab7' };
+  const tipoColor = {
+    general:'#0d7d45',
+    anuncio:'#0d7d45',
+    pago:'#534ab7',
+    incidencia:'#e24b4a',
+    reserva:'#3b9eff',
+    otro:'#b07800',
+    // fallbacks
+    urgente:'#e24b4a',
+    mantenimiento:'#b07800',
+    evento:'#3b9eff',
+    cobro:'#534ab7'
+  };
   list.innerHTML = allNotificaciones.map(n => `
     <div id="notif-item-${n.IdNotificacion}" onclick="marcarLeida(${n.IdNotificacion})"
       style="padding:14px 18px;border-bottom:0.5px solid #eef1f6;cursor:pointer;background:${n.Leida?'#fff':'#f5f9ff'};transition:background 0.15s;"
@@ -682,6 +890,11 @@ async function marcarLeida(id) {
     const n = allNotificaciones.find(x => x.IdNotificacion === id);
     if (n) n.Leida = true;
     renderNotifDropdown();
+    // Si estamos en el panel de anuncios, volver a renderizarlo también
+    const container = document.getElementById('anuncios-container');
+    if (container && container.style.display !== 'none') {
+      renderAnunciosPanel(allNotificaciones);
+    }
   } catch(e) { console.error(e); }
 }
 
@@ -691,6 +904,10 @@ async function marcarTodasLeidas() {
     n.Leida = true;
   }
   renderNotifDropdown();
+  const container = document.getElementById('anuncios-container');
+  if (container) {
+    renderAnunciosPanel(allNotificaciones);
+  }
   showToast('success', 'Notificaciones', 'Todas marcadas como leídas.');
 }
 

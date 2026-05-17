@@ -14,10 +14,10 @@
   --off:        #f7f9fc;
   --rule:       #d4dcea;
   --muted:      #8094b4;
-  --body-font:  'Inter', sans-serif;
+  --body-font:  'Plus Jakarta Sans', sans-serif;
 }
 
-html, body { height: 100%; font-family: var(--body-font); background: var(--off); color: var(--navy); }
+html, body { height: 100%; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--off); color: var(--navy); }
 
 /* ── Layout ── */
 .shell { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }

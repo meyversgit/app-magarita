@@ -2,7 +2,7 @@
    admin.js — CondoManager Admin Panel JavaScript
    ═══════════════════════════════════════════════════════════════ */
 
-const API = "http://100.115.229.107:5005";
+// API defined in config.js (loaded before this script)
 
 // ── NAVIGATION ────────────────────────────────────────────────
 const pageInfo = {
@@ -29,8 +29,8 @@ function showPanel(id, navBtn, menuId) {
   const panel = document.getElementById('panel-' + id);
   if (panel) panel.classList.add('active');
   const info = pageInfo[id] || { title: id, breadcrumb: 'Inicio' };
-  document.getElementById('page-title').textContent = info.title;
-  document.getElementById('page-breadcrumb').textContent = info.breadcrumb;
+  document.getElementById('page-title').textContent = '';
+  document.getElementById('page-breadcrumb').textContent = '';
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.sub-link').forEach(l => l.classList.remove('active'));
   if (navBtn) navBtn.classList.add('active');
@@ -44,7 +44,7 @@ function showPanel(id, navBtn, menuId) {
     }
   }
   if (id === 'dashboard')         loadDashboard();
-    if (id === 'lista-reservas' || id === 'panel-lista-reservas') loadReservas();
+  if (id === 'lista-reservas' || id === 'panel-lista-reservas') loadReservas();
   if (id === 'lista-residentes')  loadResidentes();
   if (id === 'panel-usuarios')    loadUsuarios();
   if (id === 'lista-incidencias') loadIncidencias();
@@ -53,6 +53,7 @@ function showPanel(id, navBtn, menuId) {
   if (id === 'historial-pagos')   loadHistorialPagos();
   if (id === 'registrar-pago')    loadResidentesSelect();
   if (id === 'lista-reservas')    loadReservas();
+  if (id === 'reportes')          loadReportesStats();
 }
 
 function toggleMenu(id) {
@@ -89,6 +90,7 @@ function confirmAction(title, body, onConfirm) {
 }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 function confirmLogout() {
+  closeProfileModal();
   confirmAction('¿Cerrar sesión?', 'Se cerrará su sesión actual y será redirigido al login.', () => doLogout());
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -629,7 +631,8 @@ async function submitNotificacion() {
   const tipo    = document.getElementById('notif-tipo')?.value || 'general';
   if (!titulo || !mensaje) { showToast('error', 'Campos requeridos', 'Título y mensaje son obligatorios.'); return; }
   try {
-    const res  = await fetch(API + '/api/notificaciones', {
+    // Usa el endpoint broadcast que envía a todos los residentes activos
+    const res  = await fetch(API + '/api/notificaciones/broadcast', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ titulo, mensaje, tipo })
     });
@@ -893,8 +896,8 @@ async function loadReservas() {
       <td>${r.Personas||'—'}</td>
       <td><span class="badge ${badge[r.Estado]||'badge-gray'}">${r.Estado}</span></td>
       <td>
-        <button class="${r.Estado==='pendiente'?'btn-accent':'btn-secondary'} btn-sm" onclick="abrirGestionReserva(${r.IdReserva})">
-          ${r.Estado==='pendiente'?'Revisar':'Gestionar'}
+        <button class="btn-primary btn-sm" onclick="abrirGestionReserva(${r.IdReserva})">
+          Gestionar
         </button>
       </td>
     </tr>`).join('');
@@ -957,4 +960,204 @@ async function actualizarEstadoReserva(id, nuevoEstado) {
     if (ta) ta.textContent = initials;
     if (tn) tn.textContent = (user.nombre||'Admin') + ' ' + (user.apellido||'');
   }
+
+  // Profile Modal Overlay Listener
+  document.getElementById('profile-modal-overlay')?.addEventListener('click', function(e) {
+    if (e.target === this) closeProfileModal();
+  });
 })();
+
+// ── PROFILE MODAL ─────────────────────────────────────────────
+function openProfileModal() {
+  const user = JSON.parse(sessionStorage.getItem('condoUser') || 'null');
+  if (user) {
+    const initials = ((user.nombre||'A')[0] + (user.apellido||'P')[0]).toUpperCase();
+    const fName = (user.nombre||'Admin') + ' ' + (user.apellido||'').trim();
+    document.getElementById('profile-avatar-modal').textContent = initials;
+    document.getElementById('profile-nombre-modal').textContent = fName;
+    document.getElementById('profile-email-modal').textContent = user.correo || 'admin@condo.com';
+    document.getElementById('profile-fecha-modal').textContent = user.fechaIngreso ? new Date(user.fechaIngreso).getFullYear() : '2026';
+  }
+  document.getElementById('profile-modal-overlay').classList.add('open');
+}
+
+function closeProfileModal() {
+  document.getElementById('profile-modal-overlay').classList.remove('open');
+}
+
+// ── REPORTES Y ESTADÍSTICAS ───────────────────────────────────────
+async function loadReportesStats() {
+  const subtitle = document.getElementById('rep-subtitle');
+  if (subtitle) {
+    const now = new Date();
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    subtitle.textContent = `Resumen general del edificio · ${meses[now.getMonth()]} ${now.getFullYear()}`;
+  }
+
+  // Elementos a actualizar
+  const kpiRec = document.getElementById('rep-kpi-recaudacion');
+  const kpiRecSub = document.getElementById('rep-kpi-recaudacion-sub');
+  const kpiRecLabel = document.getElementById('rep-kpi-recaudacion-label');
+  const kpiTasa = document.getElementById('rep-kpi-tasa-pago');
+  const kpiTasaSub = document.getElementById('rep-kpi-tasa-pago-sub');
+  const kpiInc = document.getElementById('rep-kpi-inc-resueltas');
+  const kpiIncSub = document.getElementById('rep-kpi-inc-resueltas-sub');
+  const kpiSat = document.getElementById('rep-kpi-satisfaccion');
+  const kpiSatSub = document.getElementById('rep-kpi-satisfaccion-sub');
+  const chartContainer = document.getElementById('rep-chart-container');
+  const catContainer = document.getElementById('rep-categories-container');
+  const tableTbody = document.getElementById('rep-table-tbody');
+
+  try {
+    const res = await fetch(`${API}/api/stats/reportes`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // 1. Top KPIs
+    const formatCurrency = (val) => 'RD$' + val.toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    
+    if (kpiRec) kpiRec.textContent = formatCurrency(data.recActual);
+    
+    // Recaudación label con mes actual abreviado
+    if (kpiRecLabel) {
+      const now = new Date();
+      const mesesAbbr = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."];
+      kpiRecLabel.textContent = `Recaudación ${mesesAbbr[now.getMonth()]}`;
+    }
+
+    if (kpiRecSub) {
+      const pctDiff = data.recAnterior > 0 ? ((data.recActual - data.recAnterior) / data.recAnterior * 100) : 0;
+      const sign = pctDiff >= 0 ? '▲' : '▼';
+      const color = pctDiff >= 0 ? '#0d7d45' : '#e24b4a';
+      kpiRecSub.style.color = color;
+      kpiRecSub.textContent = `${sign} ${pctDiff >= 0 ? '+' : ''}${pctDiff.toFixed(1)}% vs mes ant.`;
+    }
+
+    if (kpiTasa) kpiTasa.textContent = `${data.tasaPago}%`;
+    if (kpiTasaSub) {
+      const diff = data.tasaPago - data.tasaPagoAnterior;
+      const sign = diff >= 0 ? '▲' : '▼';
+      const color = diff >= 0 ? '#0d7d45' : '#e24b4a';
+      kpiTasaSub.style.color = color;
+      kpiTasaSub.textContent = `${sign} ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}% vs mes ant.`;
+    }
+
+    if (kpiInc) kpiInc.textContent = `${data.tasaIncResueltas}%`;
+    if (kpiIncSub) {
+      kpiIncSub.style.color = data.tasaIncResueltas >= 80 ? '#0d7d45' : '#e24b4a';
+      kpiIncSub.textContent = data.tasaIncResueltas >= 90 ? '▲ Excelente' : data.tasaIncResueltas >= 75 ? '▲ Favorable' : '▼ Requiere atención';
+    }
+
+    if (kpiSat) kpiSat.textContent = `${data.satisfaccion.toFixed(1)}/5`;
+    if (kpiSatSub) {
+      kpiSatSub.style.color = '#0d7d45';
+      kpiSatSub.textContent = `▲ Favorable`;
+    }
+
+    // 2. Bar Chart Recaudación
+    if (chartContainer) {
+      const maxTotal = Math.max(...data.recaudacionMensual.map(m => m.total), 1);
+      chartContainer.innerHTML = data.recaudacionMensual.map((m, idx) => {
+        const height = Math.round((m.total / maxTotal) * 100);
+        const isLast = idx === data.recaudacionMensual.length - 1;
+        const barBg = isLast ? '#3b9eff' : idx >= data.recaudacionMensual.length - 3 ? '#85b7eb' : '#dde5ef';
+        const textStyle = isLast ? 'color:#1a6fc4;font-weight:700;' : 'color:#6b7c93;';
+        const numStyle = isLast ? 'color:#3b9eff;font-weight:700;' : 'color:#8a9ab5;';
+        const kValue = m.total >= 1000 ? `${Math.round(m.total / 1000)}k` : m.total;
+        return `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:10px;${numStyle}">${kValue}</div>
+            <div style="background:${barBg};border-radius:4px 4px 0 0;width:100%;height:${height}px;min-height:4px;transition:height 0.3s ease-in-out;"></div>
+            <div style="font-size:10.5px;${textStyle}">${m.mes}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 3. Incidencias por categoría
+    if (catContainer) {
+      const catLabels = { plomeria: 'Plomería', electricidad: 'Electricidad', ascensores: 'Ascensores', seguridad: 'Seguridad', otros: 'Otros' };
+      const catColors = { plomeria: '#3b9eff', electricidad: '#0d7d45', ascensores: '#b07800', seguridad: '#534ab7', otros: '#8a9ab5' };
+      catContainer.innerHTML = Object.keys(catLabels).map(key => {
+        const pct = data.incPorcentajes[key] || 0.0;
+        const count = data.incTotales[key] || 0;
+        const color = catColors[key] || '#8a9ab5';
+        return `
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+              <span style="color:#4a5a72;">${catLabels[key]} <span style="font-size:11.5px;color:#8a9ab5;">(${count})</span></span>
+              <span style="font-weight:600;color:#0f2d52;">${pct}%</span>
+            </div>
+            <div class="progress">
+              <div class="progress-fill" style="width:${pct}%;background:${color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 4. Resumen Ejecutivo Table
+    if (tableTbody) {
+      const buildRow = (label, act, ant, pct, isPct = false, customBadge = null) => {
+        const diff = act - ant;
+        let diffText = '';
+        let diffColor = '#0f2d52';
+        if (isPct) {
+          diffText = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+          diffColor = diff >= 0 ? '#0d7d45' : '#e24b4a';
+        } else {
+          if (pct) {
+            const pctVal = ant > 0 ? (diff / ant * 100) : 0;
+            diffText = `${pctVal >= 0 ? '+' : ''}${pctVal.toFixed(1)}%`;
+            diffColor = pctVal >= 0 ? '#0d7d45' : '#e24b4a';
+          } else {
+            diffText = `${diff >= 0 ? '+' : ''}${diff}`;
+            diffColor = diff >= 0 ? '#0d7d45' : '#e24b4a';
+          }
+        }
+        
+        let badgeCls = 'badge-gray';
+        let badgeText = 'Estable';
+        if (customBadge) {
+          badgeCls = customBadge.cls;
+          badgeText = customBadge.txt;
+        } else {
+          if (diff > 0) { badgeCls = 'badge-green'; badgeText = 'Incrementó'; }
+          else if (diff < 0) { badgeCls = 'badge-red'; badgeText = 'Disminuyó'; }
+        }
+
+        const formattedAct = typeof act === 'number' && label.includes('Recaudación') ? formatCurrency(act) : act;
+        const formattedAnt = typeof ant === 'number' && label.includes('Recaudación') ? formatCurrency(ant) : ant;
+
+        return `
+          <tr>
+            <td>${label}</td>
+            <td style="font-weight:600;color:#0f2d52;">${formattedAct}</td>
+            <td style="color:#6b7c93;">${formattedAnt}</td>
+            <td style="color:${diffColor};font-weight:600;">${diffText}</td>
+            <td><span class="badge ${badgeCls}">${badgeText}</span></td>
+          </tr>
+        `;
+      };
+
+      const rows = [];
+      rows.push(buildRow('Recaudación total', data.recActual, data.recAnterior, true));
+      rows.push(buildRow('Residentes activos', data.resActivos, data.resActivosAnterior, false));
+      
+      const incDiff = data.incReportadas - data.incReportadasAnterior;
+      const incBadge = incDiff < 0 ? { cls:'badge-green', txt:'Mejoró' } : incDiff > 0 ? { cls:'badge-red', txt:'Aumentó' } : { cls:'badge-gray', txt:'Sin cambios' };
+      rows.push(buildRow('Incidencias reportadas', data.incReportadas, data.incReportadasAnterior, false, false, incBadge));
+      
+      rows.push(buildRow('Reservas procesadas', data.resProcesadas, data.resProcesadasAnterior, true));
+      
+      const morDiff = data.morosos - data.morososAnterior;
+      const morBadge = morDiff < 0 ? { cls:'badge-green', txt:'Mejoró' } : morDiff > 0 ? { cls:'badge-red', txt:'Alerta' } : { cls:'badge-gray', txt:'Estable' };
+      rows.push(buildRow('Morosos', data.morosos, data.morososAnterior, false, false, morBadge));
+
+      tableTbody.innerHTML = rows.join('');
+    }
+  } catch(e) {
+    console.error("Error al cargar reportes:", e);
+    showToast('error', 'Error', 'No se pudieron cargar las estadísticas reales del edificio.');
+  }
+}

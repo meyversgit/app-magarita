@@ -148,6 +148,36 @@ body { background: #f0f4f9; }
 .cal-day.has-event { background: #e6f1fb; color: #1a6fc4; font-weight: 600; }
 .cal-day.past { color: #b0bac8; }
 .cal-day.selected-day { background: #0f2d52 !important; color: #fff !important; font-weight: 700; }
+
+/* ── NO APARTMENT BANNER ── */
+.no-apto-banner {
+  display: none;
+  background: #fff8e6;
+  border: 1px solid #ffe99a;
+  border-left: 4px solid #b07800;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #7a5500;
+  margin-bottom: 20px;
+}
+.no-apto-banner strong { color: #b07800; }
+
+/* ── BLOCKED SECTION ── */
+.section-blocked {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.35;
+  user-select: none;
+}
+.blocked-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
+  cursor: not-allowed;
+}
 </style>
 </head>
 <body>
@@ -179,7 +209,6 @@ body { background: #f0f4f9; }
 <aside class="sidebar">
   <!-- Brand -->
   <div style="padding:22px 20px 18px;border-bottom:0.5px solid rgba(255,255,255,0.08);">
-    <div style="font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:6px;">Sistema de gestión</div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div style="width:32px;height:32px;background:#1a6fc4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
         <svg width="17" height="17" fill="none" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="9,22 9,12 15,12 15,22" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -252,7 +281,7 @@ body { background: #f0f4f9; }
     <button class="nav-link" onclick="showPanel('anuncios',this)" style="position:relative;">
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span style="flex:1;">Anuncios</span>
-      <span style="background:#3b9eff;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;">2</span>
+      <span id="badge-anuncios" style="display:none;background:#3b9eff;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;"></span>
     </button>
 
     <button class="nav-link" onclick="showPanel('reglamento',this)">
@@ -267,7 +296,7 @@ body { background: #f0f4f9; }
       <div class="avatar" style="width:34px;height:34px;font-size:11px;background:#0d7d45;">CM</div>
       <div>
         <div style="font-size:13px;font-weight:600;color:#fff;" id="user-name-side">Carlos Mendoza</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="user-apto-side">Apartamento 7C</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);" id="user-apto-side">Sin apartamento</div>
       </div>
     </div>
     <button onclick="confirmLogout()" style="display:flex;align-items:center;gap:8px;padding:9px 0;font-size:13px;color:rgba(255,150,150,0.8);background:none;border:none;cursor:pointer;width:100%;transition:color 0.15s;font-family:'Plus Jakarta Sans',sans-serif;" onmouseover="this.style.color='#ffaaaa'" onmouseout="this.style.color='rgba(255,150,150,0.8)'">
@@ -283,8 +312,8 @@ body { background: #f0f4f9; }
   <!-- Top bar -->
   <header style="background:#fff;border-bottom:0.5px solid #dde5ef;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;">
     <div>
-      <div style="font-size:15px;font-weight:700;color:#0f2d52;" id="page-title">Dashboard principal</div>
-      <div style="font-size:11.5px;color:#8a9ab5;" id="page-breadcrumb">Inicio › Dashboard</div>
+      <div style="font-size:15px;font-weight:700;color:#0f2d52;" id="page-title"></div>
+      <div style="font-size:11.5px;color:#8a9ab5;" id="page-breadcrumb"></div>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
       <!-- Bell notification dropdown -->
@@ -309,7 +338,7 @@ body { background: #f0f4f9; }
         <div class="avatar" style="background:#0d7d45;font-size:11px;">CM</div>
         <div>
           <div style="font-size:13px;font-weight:600;color:#1a2a3a;" id="user-name-top">Carlos Mendoza</div>
-          <div style="font-size:11px;color:#8a9ab5;" id="user-apto-top">Residente · Apto 7C</div>
+          <div style="font-size:11px;color:#8a9ab5;" id="user-apto-top">Residente · Sin apartamento</div>
         </div>
       </div>
     </div>
@@ -419,7 +448,7 @@ body { background: #f0f4f9; }
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;text-align:center;">
             <div style="width:72px;height:72px;background:#0d7d45;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 12px;" class="avatar">CM</div>
             <div style="font-size:16px;font-weight:700;color:#0f2d52;" id="profile-name">Carlos Mendoza</div>
-            <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;" id="profile-apto">Residente · Apartamento 7C</div>
+            <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:12px;" id="profile-apto">Residente · Sin apartamento</div>
             <span class="badge badge-green">Activo</span>
             <div style="margin-top:16px;border-top:0.5px solid #eef1f6;padding-top:16px;text-align:left;">
               <div style="font-size:12px;color:#4a5a72;margin-bottom:8px;"> Piso 7 · Ala Norte</div>
@@ -462,15 +491,15 @@ body { background: #f0f4f9; }
 
     <!-- ══════════════ ESTADO DE CUENTA ══════════════ -->
     <div id="panel-estado-cuenta" class="panel">
-      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Estado de Cuenta</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Apartamento 7C · Mayo 2026</div></div>
+      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Estado de Cuenta</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="estado-cuenta-sub">Cargando...</div></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
-        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">SALDO PENDIENTE</div><div style="font-size:26px;font-weight:700;color:#b07800;">RD$4,500</div><div style="font-size:12px;color:#b07800;margin-top:4px;">Vence 5 mayo 2026</div></div>
-        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">PAGADO ESTE AÑO</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$18,000</div><div style="font-size:12px;color:#0d7d45;margin-top:4px;">4 cuotas · Al día</div></div>
-        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">CUOTA MENSUAL</div><div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$4,500</div><div style="font-size:12px;color:#8a9ab5;margin-top:4px;">Mantenimiento</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">SALDO PENDIENTE</div><div style="font-size:26px;font-weight:700;color:#b07800;" id="ec-saldo-monto">RD$0</div><div style="font-size:12px;color:#b07800;margin-top:4px;" id="ec-saldo-vence">—</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">PAGADO ESTE AÑO</div><div style="font-size:26px;font-weight:700;color:#0f2d52;" id="ec-pagado-monto">RD$0</div><div style="font-size:12px;color:#0d7d45;margin-top:4px;" id="ec-cuotas-info">—</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:#8a9ab5;font-weight:600;margin-bottom:8px;">CUOTA MENSUAL</div><div style="font-size:26px;font-weight:700;color:#0f2d52;" id="ec-cuota-mensual">RD$4,500</div><div style="font-size:12px;color:#8a9ab5;margin-top:4px;">Mantenimiento</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
-          <div style="padding:18px 20px;border-bottom:0.5px solid #eef1f6;font-size:14px;font-weight:700;color:#0f2d52;">Desglose de cargos · Mayo 2026</div>
+          <div style="padding:18px 20px;border-bottom:0.5px solid #eef1f6;font-size:14px;font-weight:700;color:#0f2d52;" id="ec-desglose-title">Desglose de cargos</div>
           <table class="data-table">
             <thead><tr><th>Concepto</th><th>Período</th><th>Monto</th><th>Estado</th></tr></thead>
             <tbody>
@@ -483,8 +512,8 @@ body { background: #f0f4f9; }
         </div>
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;">
           <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:18px;">Pagar ahora</div>
-          <div style="font-size:28px;font-weight:800;color:#0f2d52;margin-bottom:4px;">RD$4,500</div>
-          <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:20px;">Mayo 2026 · Vence 5 mayo</div>
+          <div style="font-size:28px;font-weight:800;color:#0f2d52;margin-bottom:4px;" id="ec-pay-monto">RD$4,500</div>
+          <div style="font-size:12.5px;color:#8a9ab5;margin-bottom:20px;" id="ec-pay-info">— · —</div>
           <div class="form-group"><label class="form-label">Método de pago</label>
             <select class="form-input form-select"><option>Transferencia bancaria</option><option>Tarjeta de crédito/débito</option><option>Efectivo (oficina)</option></select>
           </div>
@@ -500,18 +529,14 @@ body { background: #f0f4f9; }
     <!-- ══════════════ HISTORIAL DE PAGOS ══════════════ -->
     <div id="panel-historial-pagos" class="panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Historial de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Apartamento 7C</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Historial de Pagos</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="historial-pagos-sub">Cargando...</div></div>
         <button class="btn-secondary" onclick="">Ver Detalle</button>
       </div>
       <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
         <table class="data-table">
           <thead><tr><th>#</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Fecha</th><th>Estado</th></tr></thead>
-          <tbody>
-            <tr><td style="color:#8a9ab5;">#1045</td><td>Mantenimiento abril</td><td style="font-weight:600;">RD$4,500</td><td>Transferencia</td><td style="color:#8a9ab5;">TRF-20260415</td><td>15/04/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#0982</td><td>Mantenimiento marzo</td><td style="font-weight:600;">RD$4,500</td><td>Efectivo</td><td style="color:#8a9ab5;">REC-20260310</td><td>10/03/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#0914</td><td>Mantenimiento febrero</td><td style="font-weight:600;">RD$4,500</td><td>Transferencia</td><td style="color:#8a9ab5;">TRF-20260208</td><td>08/02/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#0845</td><td>Mantenimiento enero</td><td style="font-weight:600;">RD$4,500</td><td>Tarjeta</td><td style="color:#8a9ab5;">TRJ-20260105</td><td>05/01/2026</td><td><span class="badge badge-green">Pagado</span></td></tr>
-            <tr><td style="color:#8a9ab5;">#0771</td><td>Mantenimiento diciembre</td><td style="font-weight:600;">RD$4,500</td><td>Transferencia</td><td style="color:#8a9ab5;">TRF-20251203</td><td>03/12/2025</td><td><span class="badge badge-green">Pagado</span></td></tr>
+          <tbody id="historial-pagos-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ab5;">Cargando historial...</td></tr>
           </tbody>
         </table>
       </div>
@@ -523,10 +548,10 @@ body { background: #f0f4f9; }
       <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
         <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:28px;">
           <div style="background:#f0f4f9;border-radius:10px;padding:16px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;">
-            <div><div style="font-size:12px;color:#6b7c93;font-weight:600;margin-bottom:2px;">Monto a pagar</div><div style="font-size:26px;font-weight:800;color:#0f2d52;">RD$4,500</div></div>
-            <div style="text-align:right;"><div style="font-size:12px;color:#6b7c93;margin-bottom:2px;">Período</div><div style="font-size:14px;font-weight:600;color:#0f2d52;">Mayo 2026</div><div style="font-size:12px;color:#b07800;">Vence 5 mayo</div></div>
+            <div><div style="font-size:12px;color:#6b7c93;font-weight:600;margin-bottom:2px;">Monto a pagar</div><div style="font-size:26px;font-weight:800;color:#0f2d52;" id="rp-monto">RD$4,500</div></div>
+            <div style="text-align:right;"><div style="font-size:12px;color:#6b7c93;margin-bottom:2px;">Período</div><div style="font-size:14px;font-weight:600;color:#0f2d52;" id="rp-periodo">—</div><div style="font-size:12px;color:#b07800;" id="rp-vence">—</div></div>
           </div>
-          <div class="form-group"><label class="form-label">Concepto</label><input class="form-input" type="text" value="Mantenimiento mensual · Mayo 2026" readonly style="background:#f7f9fc;color:#6b7c93;"/></div>
+          <div class="form-group"><label class="form-label">Concepto</label><input class="form-input" type="text" id="rp-concepto" value="Mantenimiento mensual" readonly style="background:#f7f9fc;color:#6b7c93;"/></div>
           <div class="form-group"><label class="form-label">Método de pago *</label>
             <select class="form-input form-select" id="pay-method" onchange="updatePayInfo(this.value)">
               <option value="">Seleccionar método...</option>
@@ -541,13 +566,6 @@ body { background: #f0f4f9; }
           </div>
           <div class="form-group"><label class="form-label">Número de referencia *</label><input class="form-input" type="text" id="pay-ref" placeholder="Ej: TRF-20260505-001"/></div>
           <div class="form-group"><label class="form-label">Fecha del pago *</label><input class="form-input" type="date" id="pay-date"/></div>
-          <div class="form-group"><label class="form-label">Comprobante (opcional)</label>
-            <div style="border:2px dashed #dde5ef;border-radius:8px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="this.style.borderColor='#dde5ef'">
-              <div style="font-size:22px;margin-bottom:6px;">📎</div>
-              <div style="font-size:13px;color:#6b7c93;">Arrastra o haz clic para subir comprobante</div>
-              <div style="font-size:11.5px;color:#aab4c2;margin-top:3px;">PNG, JPG, PDF · máx 5MB</div>
-            </div>
-          </div>
           <div class="form-group"><label class="form-label">Notas (opcional)</label><textarea class="form-input" rows="2" placeholder="Información adicional..."></textarea></div>
           <button class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:13px;margin-top:8px;" onclick="submitPago()">
             Enviar pago
@@ -655,7 +673,7 @@ body { background: #f0f4f9; }
     <!-- ══════════════ MIS RESERVAS ══════════════ -->
     <div id="panel-mis-reservas" class="panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Mis Reservas</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Historial de reservas · Apto 7C</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:#0f2d52;">Mis Reservas</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="mis-reservas-sub">Cargando...</div></div>
         <button class="btn-primary" onclick="showPanel('nueva-reserva',null,'reservas')">+ Nueva reserva</button>
       </div>
       <div id="reservas-residentes-list" style="display:flex;flex-direction:column;gap:12px;">
@@ -691,13 +709,6 @@ body { background: #f0f4f9; }
             </div>
           </div>
           <div class="form-group"><label class="form-label">Descripción detallada *</label><textarea class="form-input" id="inc-desc" rows="5" placeholder="Describe el problema con el mayor detalle posible..."></textarea></div>
-          <div class="form-group"><label class="form-label">Adjuntar fotos (opcional)</label>
-            <div style="border:2px dashed #dde5ef;border-radius:8px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.borderColor='#3b9eff'" onmouseout="this.style.borderColor='#dde5ef'">
-              <div style="font-size:22px;margin-bottom:6px;">📷</div>
-              <div style="font-size:13px;color:#6b7c93;">Arrastra fotos del problema aquí</div>
-              <div style="font-size:11.5px;color:#aab4c2;margin-top:3px;">PNG, JPG · máx 10MB por foto</div>
-            </div>
-          </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
             <button class="btn-secondary" onclick="showPanel('mis-incidencias',null,'incidencias')">Cancelar</button>
             <button class="btn-primary" onclick="submitIncidencia()">Enviar reporte</button>
@@ -783,58 +794,12 @@ body { background: #f0f4f9; }
 
     <!-- ══════════════ ANUNCIOS ══════════════ -->
     <div id="panel-anuncios" class="panel">
-      <div style="margin-bottom:24px;"><div style="font-size:20px;font-weight:700;color:#0f2d52;">Anuncios y Notificaciones</div><div style="font-size:13px;color:#8a9ab5;margin-top:2px;">2 nuevos anuncios</div></div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <!-- Alerta urgente -->
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #fad0d0;padding:22px;border-left:4px solid #e24b4a;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="badge badge-red"> Alerta urgente</span>
-              <span style="font-size:11.5px;background:#fff0f0;color:#c0392b;padding:2px 8px;border-radius:99px;font-weight:700;">NUEVO</span>
-            </div>
-            <div style="font-size:12px;color:#8a9ab5;">Hoy 09:30 AM</div>
-          </div>
-          <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Corte de electricidad zona norte</div>
-          <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Se informa que habrá corte de electricidad en la zona norte del edificio de <strong>10:00 AM a 2:00 PM</strong> por trabajos de mantenimiento preventivo. Se recomienda no usar el ascensor durante ese período.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
-        </div>
-
-        <!-- Evento -->
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #3b9eff;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="badge badge-blue"> Evento</span>
-              <span style="font-size:11.5px;background:#e6f1fb;color:#1a6fc4;padding:2px 8px;border-radius:99px;font-weight:700;">NUEVO</span>
-            </div>
-            <div style="font-size:12px;color:#8a9ab5;">Ayer 03:15 PM</div>
-          </div>
-          <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Reunión de propietarios – Mayo 2026</div>
-          <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Se convoca a todos los propietarios a la asamblea mensual el próximo <strong>5 de mayo a las 7:00 PM</strong> en el salón social. Se tratarán temas de presupuesto, obras y normas de convivencia.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
-        </div>
-
-        <!-- General -->
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #0d7d45;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <span class="badge badge-green"> General</span>
-            <div style="font-size:12px;color:#8a9ab5;">20 abr 2026</div>
-          </div>
-          <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Normas de uso de la piscina – Temporada 2026</div>
-          <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">Recordamos a todos los residentes las normas de uso de la piscina durante la temporada. Horario: <strong>8:00 AM – 8:00 PM</strong>. Niños menores de 12 años deben ir acompañados de un adulto.</div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
-        </div>
-
-        <!-- Cobro -->
-        <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:22px;border-left:4px solid #b07800;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
-            <span class="badge badge-yellow"> Recordatorio</span>
-            <div style="font-size:12px;color:#8a9ab5;">1 abr 2026</div>
-          </div>
-          <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">Recordatorio de pago mensual – Mayo 2026</div>
-          <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">El pago mensual de mantenimiento correspondiente a mayo vence el <strong>5 de mayo</strong>. Monto: RD$4,500. Realice su pago a tiempo para evitar recargos.</div>
-          <div style="margin-top:12px;"><button class="btn-accent btn-sm" onclick="showPanel('realizar-pago',null,'pagos')">Pagar ahora →</button></div>
-          <div style="font-size:12px;color:#8a9ab5;margin-top:10px;"> Administración del edificio</div>
-        </div>
+      <div style="margin-bottom:24px;">
+        <div style="font-size:20px;font-weight:700;color:#0f2d52;">Anuncios y Notificaciones</div>
+        <div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="anuncios-count-sub">Cargando...</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;" id="anuncios-container">
+        <div style="text-align:center;padding:32px;color:#8a9ab5;font-size:13px;">Cargando anuncios...</div>
       </div>
     </div>
 
@@ -910,8 +875,8 @@ function showPanel(id, navBtn, menuId) {
   const panel = document.getElementById('panel-' + id);
   if (panel) panel.classList.add('active');
   const info = pages[id] || { title: id, bc: 'Inicio' };
-  document.getElementById('page-title').textContent = info.title;
-  document.getElementById('page-breadcrumb').textContent = info.bc;
+  document.getElementById('page-title').textContent = '';
+  document.getElementById('page-breadcrumb').textContent = '';
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   if (navBtn) navBtn.classList.add('active');
   if (menuId) {
@@ -955,6 +920,9 @@ function confirmAction(title, body, cb) {
 }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 function confirmLogout() { 
+  // Cerrar el modal de perfil primero para que el de confirmación quede visible encima
+  const profileModal = document.getElementById('profile-modal-overlay');
+  if (profileModal) profileModal.classList.remove('open');
   confirmAction('¿Cerrar sesión?','Tu sesión será cerrada y serás redirigido al inicio.', () => {
     sessionStorage.removeItem('condoUser');
     window.location.href = 'login.html';
@@ -1023,6 +991,7 @@ function updatePayInfo(val) {
   </div>
 </div>
 
-<script src="js/residente.js?v=3"></script>
+<script src="js/config.js"></script>
+<script src="js/residente.js?v=4"></script>
 </body>
 </html>

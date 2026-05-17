@@ -18,7 +18,7 @@
     <span id="toast-icon" style="font-size:20px;"></span>
     <div>
       <div id="toast-title" style="font-weight:600;font-size:13.5px;color:#1a2a3a;"></div>
-      <div id="toast-msg" style="font-size:12.5px;color:#3b9eff !important; font-size: 24px;margin-top:1px;"></div>
+      <div id="toast-msg" style="font-size:12.5px;color:#6b7c93;margin-top:1px;"></div>
     </div>
   </div>
 
@@ -27,7 +27,7 @@
     <div class="modal">
       <div style="font-size:17px;font-weight:700;color:#0f2d52;margin-bottom:8px;" id="modal-title">Confirmar acción
       </div>
-      <div style="font-size:13.5px;color:#3b9eff !important; font-size: 24px;margin-bottom:24px;" id="modal-body">¿Está
+      <div style="font-size:13.5px;color:#6b7c93;margin-bottom:24px;" id="modal-body">¿Está
         seguro de que desea realizar esta acción?</div>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -42,9 +42,6 @@
     <aside class="sidebar">
       <!-- Brand -->
       <div style="padding:22px 20px 18px;border-bottom:0.5px solid rgba(255,255,255,0.08);">
-        <div
-          style="font-size:10px;font-weight:600;letter-spacing:0.09em;color:rgba(255,255,255,0.35);text-transform:uppercase;margin-bottom:6px;">
-          Sistema de gestión</div>
         <div style="display:flex;align-items:center;gap:10px;">
           <div
             style="width:32px;height:32px;background:#1a6fc4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
@@ -187,11 +184,11 @@
 
       <!-- Footer -->
       <div style="padding:16px 20px;border-top:0.5px solid rgba(255,255,255,0.08);">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer;" onclick="openProfileModal()" title="Ver Perfil">
           <div class="avatar" style="width:34px;height:34px;font-size:11px;background:#1a6fc4;">AP</div>
           <div>
             <div style="font-size:13px;font-weight:600;color:#fff;">Admin Principal</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.4);">admin@edificio.com</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);">admin@condo.com</div>
           </div>
         </div>
         <button onclick="confirmLogout()"
@@ -213,14 +210,14 @@
       <header
         style="background:#fff;border-bottom:0.5px solid #dde5ef;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:40;">
         <div>
-          <div style="font-size:15px;font-weight:700;color:#0f2d52;" id="page-title">Dashboard principal</div>
-          <div style="font-size:11.5px;color:#8a9ab5;" id="page-breadcrumb">Inicio › Dashboard</div>
+          <div style="font-size:15px;font-weight:700;color:#0f2d52;" id="page-title"></div>
+          <div style="font-size:11.5px;color:#8a9ab5;" id="page-breadcrumb"></div>
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
           <!-- Bell notification dropdown -->
           <div style="position:relative;" id="notif-wrapper">
             <button id="bell-btn" onclick="toggleNotifDropdown()"
-              style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#3b9eff !important; font-size: 24px;"
+              style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#6b7c93;"
               onmouseover="this.style.background='#f0f4f9'" onmouseout="this.style.background='none'">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor"
@@ -515,7 +512,7 @@
                 <div style="border:2px dashed #dde5ef;border-radius:10px;padding:28px;text-align:center;cursor:pointer;"
                   onmouseover="this.style.borderColor='#3b9eff'" onmouseout="this.style.borderColor='#dde5ef'">
                   <div style="font-size:28px;margin-bottom:8px;">📷</div>
-                  <div style="font-size:13px;color:#3b9eff !important; font-size: 24px;">Arrastra o haz clic para subir
+                  <div style="font-size:13px;color:#6b7c93;">Arrastra o haz clic para subir
                   </div>
                   <div style="font-size:11.5px;color:#aab4c2;margin-top:4px;">PNG, JPG máx. 5MB</div>
                 </div>
@@ -1211,130 +1208,56 @@
         <div id="panel-reportes" class="panel">
           <div style="margin-bottom:24px;">
             <div style="font-size:20px;font-weight:700;color:#0f2d52;">Reportes y Estadísticas</div>
-            <div style="font-size:13px;color:#8a9ab5;margin-top:2px;">Resumen general del edificio · Abril 2026</div>
+            <div style="font-size:13px;color:#8a9ab5;margin-top:2px;" id="rep-subtitle">Resumen general del edificio</div>
           </div>
 
           <!-- Top KPIs -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
             <div class="stat-card">
-              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">
-                Recaudación abr.</div>
-              <div style="font-size:26px;font-weight:700;color:#0f2d52;">RD$284,500</div>
-              <div style="font-size:12px;color:#0d7d45;">▲ +5.2% vs mar.</div>
+              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;" id="rep-kpi-recaudacion-label">Recaudación</div>
+              <div style="font-size:26px;font-weight:700;color:#0f2d52;" id="rep-kpi-recaudacion">RD$0</div>
+              <div style="font-size:12px;color:#0d7d45;" id="rep-kpi-recaudacion-sub">▲ 0% vs mes ant.</div>
             </div>
             <div class="stat-card">
-              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Tasa
-                de pago</div>
-              <div style="font-size:26px;font-weight:700;color:#0f2d52;">89%</div>
-              <div style="font-size:12px;color:#0d7d45;">▲ +3% vs mar.</div>
+              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Tasa de pago</div>
+              <div style="font-size:26px;font-weight:700;color:#0f2d52;" id="rep-kpi-tasa-pago">0%</div>
+              <div style="font-size:12px;color:#0d7d45;" id="rep-kpi-tasa-pago-sub">▲ 0% vs mes ant.</div>
             </div>
             <div class="stat-card">
-              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">
-                Incidencias resueltas</div>
-              <div style="font-size:26px;font-weight:700;color:#0f2d52;">94%</div>
-              <div style="font-size:12px;color:#0d7d45;">▲ Excelente</div>
+              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Incidencias resueltas</div>
+              <div style="font-size:26px;font-weight:700;color:#0f2d52;" id="rep-kpi-inc-resueltas">0%</div>
+              <div style="font-size:12px;color:#0d7d45;" id="rep-kpi-inc-resueltas-sub">▲ Excelente</div>
             </div>
             <div class="stat-card">
-              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">
-                Satisfacción</div>
-              <div style="font-size:26px;font-weight:700;color:#0f2d52;">4.7/5</div>
-              <div style="font-size:12px;color:#0d7d45;">▲ +0.2 vs mar.</div>
+              <div style="font-size:11px;color:#8a9ab5;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Satisfacción</div>
+              <div style="font-size:26px;font-weight:700;color:#0f2d52;" id="rep-kpi-satisfaccion">4.8/5</div>
+              <div style="font-size:12px;color:#0d7d45;" id="rep-kpi-satisfaccion-sub">▲ +0.1 vs mes ant.</div>
             </div>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
             <!-- Bar chart recaudación -->
             <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
-              <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Recaudación mensual (RD$)
-              </div>
-              <div style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:10px;">
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#8a9ab5;">241k</div>
-                  <div style="background:#dde5ef;border-radius:4px 4px 0 0;width:100%;height:75px;"></div>
-                  <div style="font-size:10.5px;color:#3b9eff !important; font-size: 24px;">Nov</div>
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#8a9ab5;">258k</div>
-                  <div style="background:#dde5ef;border-radius:4px 4px 0 0;width:100%;height:85px;"></div>
-                  <div style="font-size:10.5px;color:#3b9eff !important; font-size: 24px;">Dic</div>
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#8a9ab5;">262k</div>
-                  <div style="background:#b5d4f4;border-radius:4px 4px 0 0;width:100%;height:87px;"></div>
-                  <div style="font-size:10.5px;color:#3b9eff !important; font-size: 24px;">Ene</div>
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#8a9ab5;">255k</div>
-                  <div style="background:#b5d4f4;border-radius:4px 4px 0 0;width:100%;height:82px;"></div>
-                  <div style="font-size:10.5px;color:#3b9eff !important; font-size: 24px;">Feb</div>
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#8a9ab5;">270k</div>
-                  <div style="background:#85b7eb;border-radius:4px 4px 0 0;width:100%;height:92px;"></div>
-                  <div style="font-size:10.5px;color:#3b9eff !important; font-size: 24px;">Mar</div>
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-                  <div style="font-size:10px;color:#3b9eff;font-weight:700;">284k</div>
-                  <div style="background:#3b9eff;border-radius:4px 4px 0 0;width:100%;height:108px;"></div>
-                  <div style="font-size:10.5px;color:#1a6fc4;font-weight:700;">Abr</div>
-                </div>
+              <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Recaudación mensual (RD$)</div>
+              <div id="rep-chart-container" style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:10px;">
+                <!-- Dynamically filled -->
               </div>
             </div>
 
             <!-- Incidencias por tipo -->
             <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:24px;">
-              <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Incidencias por categoría
-              </div>
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span
-                      style="color:#4a5a72;">Plomería</span><span style="font-weight:600;color:#0f2d52;">38%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-fill" style="width:38%;"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span
-                      style="color:#4a5a72;">Electricidad</span><span style="font-weight:600;color:#0f2d52;">24%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-fill" style="width:24%;background:#0d7d45;"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span
-                      style="color:#4a5a72;">Ascensores</span><span style="font-weight:600;color:#0f2d52;">18%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-fill" style="width:18%;background:#b07800;"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span
-                      style="color:#4a5a72;">Áreas comunes</span><span style="font-weight:600;color:#0f2d52;">13%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-fill" style="width:13%;background:#534ab7;"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span
-                      style="color:#4a5a72;">Otros</span><span style="font-weight:600;color:#0f2d52;">7%</span></div>
-                  <div class="progress">
-                    <div class="progress-fill" style="width:7%;background:#8a9ab5;"></div>
-                  </div>
-                </div>
+              <div style="font-size:14px;font-weight:700;color:#0f2d52;margin-bottom:20px;">Incidencias por categoría</div>
+              <div id="rep-categories-container" style="display:flex;flex-direction:column;gap:12px;">
+                <!-- Dynamically filled -->
               </div>
             </div>
           </div>
 
           <!-- Tabla resumen -->
           <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;overflow:hidden;">
-            <div
-              style="padding:18px 20px;border-bottom:0.5px solid #eef1f6;display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-size:14px;font-weight:700;color:#0f2d52;">Resumen ejecutivo · Abril 2026</div>
-              <button class="btn-secondary btn-sm" onclick="showPanel('reportes')">Ver Reporte</button>
+            <div style="padding:18px 20px;border-bottom:0.5px solid #eef1f6;display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:#0f2d52;" id="rep-table-title">Resumen ejecutivo</div>
+              <button class="btn-secondary btn-sm" onclick="loadReportesStats()">Actualizar</button>
             </div>
             <table class="data-table">
               <thead>
@@ -1346,42 +1269,8 @@
                   <th>Estado</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Recaudación total</td>
-                  <td>RD$284,500</td>
-                  <td>RD$270,000</td>
-                  <td style="color:#0d7d45;">+5.4%</td>
-                  <td><span class="badge badge-green">Excelente</span></td>
-                </tr>
-                <tr>
-                  <td>Residentes activos</td>
-                  <td>134</td>
-                  <td>131</td>
-                  <td style="color:#0d7d45;">+2.3%</td>
-                  <td><span class="badge badge-green">Normal</span></td>
-                </tr>
-                <tr>
-                  <td>Incidencias reportadas</td>
-                  <td>8</td>
-                  <td>12</td>
-                  <td style="color:#0d7d45;">-33%</td>
-                  <td><span class="badge badge-green">Mejoró</span></td>
-                </tr>
-                <tr>
-                  <td>Reservas procesadas</td>
-                  <td>22</td>
-                  <td>18</td>
-                  <td style="color:#0d7d45;">+22%</td>
-                  <td><span class="badge badge-blue">Alto</span></td>
-                </tr>
-                <tr>
-                  <td>Morosos</td>
-                  <td>2</td>
-                  <td>4</td>
-                  <td style="color:#0d7d45;">-50%</td>
-                  <td><span class="badge badge-green">Mejoró</span></td>
-                </tr>
+              <tbody id="rep-table-tbody">
+                <!-- Dynamically filled -->
               </tbody>
             </table>
           </div>
@@ -1391,40 +1280,7 @@
     </div><!-- /main-content -->
   </div><!-- /flex -->
 
-  <!-- ===== PROFILE MODAL ===== -->
-  <div class="modal-overlay" id="profile-modal-overlay">
-    <div class="modal" style="width:420px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div style="font-size:17px;font-weight:700;color:#0f2d52;">Mi Perfil</div>
-        <button onclick="closeProfileModal()"
-          style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;"></button>
-      </div>
-      <div style="text-align:center;margin-bottom:20px;">
-        <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#0f2d52;"
-          id="profile-avatar">AP</div>
-        <div style="font-size:18px;font-weight:700;color:#0f2d52;" id="profile-nombre">Admin Principal</div>
-        <div style="font-size:13px;color:#8a9ab5;" id="profile-email">admin@edificio.com</div>
-      </div>
-      <div style="background:#f0f4f9;border-radius:10px;padding:16px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid #dde5ef;">
-          <span style="font-size:13px;color:#3b9eff !important; font-size: 24px;">Rol</span>
-          <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-rol">Administrador</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;">
-          <span style="font-size:13px;color:#3b9eff !important; font-size: 24px;">Miembro desde</span>
-          <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-fecha">—</span>
-        </div>
-      </div>
-      <button onclick="doLogout()"
-        style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;background:#fff0f0;color:#c0392b;border:1px solid #fad0d0;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">
-        <svg width="15" height="15" fill="none" viewBox="0 0 24 24">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        Cerrar sesión
-      </button>
-    </div>
-  </div>
+
 
   <!-- ===== RECIBO MODAL ===== -->
   <div class="modal-overlay" id="recibo-modal-overlay">
@@ -1445,6 +1301,36 @@
     </div>
   </div>
 
+  <!-- ===== PROFILE MODAL ===== -->
+  <div class="modal-overlay" id="profile-modal-overlay">
+    <div class="modal" style="width:420px;font-family:'Plus Jakarta Sans',sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:17px;font-weight:700;color:#0f2d52;">Mi Perfil</div>
+        <button onclick="closeProfileModal()" style="background:none;border:none;cursor:pointer;color:#8a9ab5;font-size:20px;">✖</button>
+      </div>
+      <div style="text-align:center;margin-bottom:20px;">
+        <div class="avatar" style="width:72px;height:72px;font-size:22px;margin:0 auto 12px;background:#1a6fc4;" id="profile-avatar-modal">AP</div>
+        <div style="font-size:18px;font-weight:700;color:#0f2d52;" id="profile-nombre-modal">Admin Principal</div>
+        <div style="font-size:13px;color:#8a9ab5;" id="profile-email-modal">admin@condo.com</div>
+      </div>
+      <div style="background:#f0f4f9;border-radius:10px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid #dde5ef;">
+          <span style="font-size:13px;color:#6b7c93;">Rol</span>
+          <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-rol-modal">Administrador</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;">
+          <span style="font-size:13px;color:#6b7c93;">Miembro desde</span>
+          <span style="font-size:13px;font-weight:600;color:#0f2d52;" id="profile-fecha-modal">2026</span>
+        </div>
+      </div>
+      <button onclick="confirmLogout()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;background:#fff0f0;color:#c0392b;border:1px solid #fad0d0;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
   <script src="js/admin.js"></script>
 </body>
 
