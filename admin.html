@@ -1027,6 +1027,7 @@
                       especificada</span></div>
                   <div><strong style="color:#1a2a3a;">Prioridad:</strong> <span id="inc-detalle-prioridad">Normal</span>
                   </div>
+                  <div style="grid-column: span 2;"><strong style="color:#1a2a3a;">Técnico Asignado:</strong> <span id="inc-detalle-tecnico-nombre" style="font-weight:600;color:#1a6fc4;">Ninguno</span></div>
                 </div>
                 <div
                   style="margin-top:14px;padding-top:14px;border-top:0.5px solid #eef1f6;font-size:13.5px;color:#4a5a72;">
@@ -1071,14 +1072,11 @@
             <div style="display:flex;flex-direction:column;gap:16px;">
               <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
                 <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Asignar técnico</div>
-                <select class="form-input form-select" style="margin-bottom:10px;">
-                  <option>Seleccionar...</option>
-                  <option>Luis Pérez – Plomería</option>
-                  <option>Juan Torres – Electricidad</option>
-                  <option>Pedro Gómez – General</option>
+                <select class="form-input form-select" id="inc-detalle-tecnico-select" style="margin-bottom:10px;">
+                  <option value="">Seleccionar...</option>
                 </select>
                 <button class="btn-primary" style="width:100%;"
-                  onclick="showToast('success','Técnico asignado','Luis Pérez fue notificado.')">Asignar</button>
+                  onclick="asignarTecnicoIncidencia()">Asignar</button>
               </div>
               <div style="background:#fff;border-radius:12px;border:0.5px solid #dde5ef;padding:20px;">
                 <div style="font-size:13px;font-weight:700;color:#0f2d52;margin-bottom:14px;">Línea de tiempo</div>

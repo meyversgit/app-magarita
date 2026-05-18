@@ -90,6 +90,15 @@ async function doRegister() {
   if (password.length < 8) {
     setAlert('register-alert', 'La contraseña debe tener al menos 8 caracteres.', 'error'); return;
   }
+  if (!/\d/.test(password)) {
+    setAlert('register-alert', 'La contraseña debe contener al menos un número.', 'error'); return;
+  }
+  if (!/[A-Z]/.test(password)) {
+    setAlert('register-alert', 'La contraseña debe contener al menos una letra mayúscula.', 'error'); return;
+  }
+  if (!password.includes('.')) {
+    setAlert('register-alert', 'La contraseña debe contener al menos un punto (.).', 'error'); return;
+  }
   if (!terms) {
     setAlert('register-alert', 'Debes aceptar los términos de servicio.', 'error'); return;
   }

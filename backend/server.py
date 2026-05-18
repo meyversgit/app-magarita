@@ -50,6 +50,16 @@ def register():
     pwd = d.get("password") or ""
     if not all([nombre, apellido, correo, pwd]):
         return jsonify({"message": "Todos los campos obligatorios excepto el telefono."}), 400
+    
+    # Validar politicas de seguridad para contraseñas de usuarios nuevos
+    if len(pwd) < 8:
+        return jsonify({"message": "La contraseña debe tener al menos 8 caracteres."}), 400
+    if not any(char.isdigit() for char in pwd):
+        return jsonify({"message": "La contraseña debe contener al menos un número."}), 400
+    if not any(char.isupper() for char in pwd):
+        return jsonify({"message": "La contraseña debe contener al menos una letra mayúscula."}), 400
+    if '.' not in pwd:
+        return jsonify({"message": "La contraseña debe contener al menos un punto (.)."}), 400
     conn = None
     try:
         conn = get_db(); c = conn.cursor()
@@ -624,9 +634,14 @@ def get_residente_incidencias(user_id):
     try:
         conn = get_db(); c = conn.cursor()
         c.execute("""SELECT i.id AS IdIncidencia, i.titulo AS Titulo, i.descripcion AS Descripcion,
-                            i.categoria AS Categoria, i.estado AS Estado, i.fecha_reporte AS FechaReporte
+                            i.categoria AS Categoria, i.estado AS Estado, i.fecha_reporte AS FechaReporte,
+                            i.tecnico_id AS TecnicoId,
+                            utec.nombre + ' ' + utec.apellido AS TecnicoNombre,
+                            t.especialidad AS TecnicoEspecialidad
                      FROM incidencia i
                      JOIN residente r ON i.residente_id = r.id
+                     LEFT JOIN tecnico t ON i.tecnico_id = t.id
+                     LEFT JOIN usuario utec ON t.usuario_id = utec.id
                      WHERE r.usuario_id = ?
                      ORDER BY i.fecha_reporte DESC""", (user_id,))
         return jsonify(rows_to_list(c.fetchall(), c))
@@ -668,6 +683,30 @@ def get_notificaciones(user_id):
         return jsonify({"message": str(e)}), 500
     finally:
         if conn: conn.close()
+
+
+@app.route("/api/anuncios", methods=["GET"])
+def get_anuncios():
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("""
+            SELECT a.id AS IdNotificacion, 
+                   u.nombre + ' ' + u.apellido AS Autor, adm.cargo AS Cargo,
+                   a.titulo AS Titulo, a.contenido AS Mensaje,
+                   a.fecha_publicacion AS FechaCreacion, a.publicado AS Publicado,
+                   'anuncio' AS Tipo, 0 AS Leida
+            FROM anuncio a
+            JOIN administrador adm ON a.admin_id = adm.id
+            JOIN usuario u ON adm.usuario_id = u.id
+            ORDER BY a.fecha_publicacion DESC
+        """)
+        return jsonify(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 
 @app.route("/api/residente/actividad/<int:user_id>", methods=["GET"])
 def get_residente_actividad(user_id):
@@ -927,6 +966,25 @@ def broadcast_notificacion():
         for uid in uids:
             c.execute("INSERT INTO notificacion(usuario_id,titulo,mensaje,tipo,leida,fecha_envio) VALUES(?,?,?,?,0,GETDATE())",
                       (uid, titulo, mensaje, tipo))
+        
+        # Si es de tipo 'anuncio', registrar en la tabla 'anuncio'
+        if tipo == "anuncio":
+            admin_usuario_id = d.get("admin_usuario_id")
+            admin_id = None
+            if admin_usuario_id:
+                c.execute("SELECT id FROM administrador WHERE usuario_id = ?", (admin_usuario_id,))
+                admin_row = c.fetchone()
+                if admin_row: admin_id = admin_row[0]
+            if not admin_id:
+                # Fallback al primer administrador registrado
+                c.execute("SELECT TOP 1 id FROM administrador")
+                first_admin = c.fetchone()
+                if first_admin: admin_id = first_admin[0]
+            
+            if admin_id:
+                c.execute("""INSERT INTO anuncio(admin_id, titulo, contenido, publicado, fecha_publicacion)
+                             VALUES(?, ?, ?, 1, GETDATE())""", (admin_id, titulo, mensaje))
+        
         conn.commit()
         return jsonify({"message": f"Notificación enviada a {len(uids)} usuario(s)."}), 201
     except Exception as e:
@@ -1025,11 +1083,16 @@ def get_incidencias():
                      i.fecha_reporte AS FechaReporte,
                      i.fecha_actualizacion AS FechaActualizacion,
                      u.nombre + ' ' + u.apellido AS ResidenteNombre,
-                     a.numero AS Apartamento
+                     a.numero AS Apartamento,
+                     i.tecnico_id AS TecnicoId,
+                     utec.nombre + ' ' + utec.apellido AS TecnicoNombre,
+                     t.especialidad AS TecnicoEspecialidad
                      FROM incidencia i
                      LEFT JOIN residente r ON i.residente_id = r.id
                      LEFT JOIN usuario u ON r.usuario_id = u.id
                      LEFT JOIN apartamento a ON r.apartamento_id = a.id
+                     LEFT JOIN tecnico t ON i.tecnico_id = t.id
+                     LEFT JOIN usuario utec ON t.usuario_id = utec.id
                      ORDER BY i.fecha_reporte DESC""")
         return jsonify(rows_to_list(c.fetchall(), c))
     except Exception as e:
@@ -1063,20 +1126,101 @@ def update_incidencia(id):
     d = request.get_json(silent=True) or {}
     estado_map = {"Abierta":"abierta","En proceso":"en_proceso","Resuelta":"resuelta","Cerrada":"cerrada"}
     estado = estado_map.get(d.get("estado",""), "")
-    if not estado: return jsonify({"message": "Estado invalido."}), 400
+    tecnico_id = d.get("tecnico_id")
+    
     conn = None
     try:
         conn = get_db(); c = conn.cursor()
-        c.execute("UPDATE incidencia SET estado=?,fecha_actualizacion=GETDATE() WHERE id=?", (estado, id))
+        if estado:
+            c.execute("UPDATE incidencia SET estado=?, fecha_actualizacion=GETDATE() WHERE id=?", (estado, id))
+        if tecnico_id is not None:
+            tid = None if not tecnico_id or tecnico_id == "null" or tecnico_id == 0 else int(tecnico_id)
+            c.execute("UPDATE incidencia SET tecnico_id=?, fecha_actualizacion=GETDATE() WHERE id=?", (tid, id))
         conn.commit()
-        return jsonify({"message": f"Incidencia actualizada a '{estado}'."})
+        return jsonify({"message": "Incidencia actualizada exitosamente."})
     except Exception as e:
         return jsonify({"message": str(e)}), 500
     finally:
         if conn: conn.close()
 
+@app.route("/api/tecnicos", methods=["GET"])
+def get_tecnicos():
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("""
+            SELECT t.id AS IdTecnico, t.especialidad AS Especialidad, t.disponible AS Disponible,
+                   u.nombre + ' ' + u.apellido AS Nombre, u.email AS Email, u.telefono AS Telefono
+            FROM tecnico t
+            JOIN usuario u ON t.usuario_id = u.id
+            WHERE u.activo = 1
+        """)
+        return jsonify(rows_to_list(c.fetchall(), c))
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+def ensure_admin_records():
+    """Escanea los usuarios con rol = 'admin' y asegura su existencia en la tabla administrador."""
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        c.execute("SELECT id, nombre, email FROM usuario WHERE rol = 'admin'")
+        admins = c.fetchall()
+        print(f"[Autocuracion] Detectados {len(admins)} administradores en la tabla 'usuario'.")
+        for a in admins:
+            c.execute("SELECT id FROM administrador WHERE usuario_id = ?", (a.id,))
+            row = c.fetchone()
+            if not row:
+                cargo = "Administrador Principal" if "admin" in a.email else "Administradora de Condominios"
+                c.execute("INSERT INTO administrador (usuario_id, cargo) VALUES (?, ?)", (a.id, cargo))
+                print(f"[Autocuracion] Registrado '{a.nombre}' ({a.email}) en la tabla 'administrador'.")
+        conn.commit()
+    except Exception as e:
+        print("[Autocuracion ERROR]: No se pudo inicializar la tabla 'administrador':", e)
+    finally:
+        if conn: conn.close()
+
+def ensure_tecnico_records():
+    """Asegura la existencia de tecnicos base en las tablas 'usuario' y 'tecnico'."""
+    conn = None
+    try:
+        conn = get_db(); c = conn.cursor()
+        tecnicos_base = [
+            {"nombre": "Carlos", "apellido": "Mendoza", "email": "carlos.mendoza@condo.local", "telefono": "8095550101", "especialidad": "plomeria"},
+            {"nombre": "Juan", "apellido": "Perez", "email": "juan.perez@condo.local", "telefono": "8095550102", "especialidad": "electricidad"},
+            {"nombre": "Maria", "apellido": "Delgado", "email": "maria.delgado@condo.local", "telefono": "8095550103", "especialidad": "seguridad"},
+            {"nombre": "Pedro", "apellido": "Gomez", "email": "pedro.gomez@condo.local", "telefono": "8095550104", "especialidad": "limpieza"}
+        ]
+        for t in tecnicos_base:
+            c.execute("SELECT id FROM usuario WHERE email = ?", (t["email"],))
+            user_row = c.fetchone()
+            if not user_row:
+                c.execute("""
+                    INSERT INTO usuario (nombre, apellido, email, telefono, password_hash, rol, activo, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'tecnico', 1, GETDATE())
+                """, (t["nombre"], t["apellido"], t["email"], t["telefono"], hash_pwd("condo123")))
+                c.execute("SELECT id FROM usuario WHERE email = ?", (t["email"],))
+                user_id = c.fetchone()[0]
+                print(f"[Autocuracion] Creado usuario tecnico '{t['nombre']} {t['apellido']}'.")
+            else:
+                user_id = user_row[0]
+                
+            c.execute("SELECT id FROM tecnico WHERE usuario_id = ?", (user_id,))
+            tech_row = c.fetchone()
+            if not tech_row:
+                c.execute("INSERT INTO tecnico (usuario_id, especialidad, disponible) VALUES (?, ?, 1)", (user_id, t["especialidad"]))
+                print(f"[Autocuracion] Registrado tecnico perfil para '{t['nombre']} {t['apellido']}' (Especialidad: {t['especialidad']}).")
+        conn.commit()
+    except Exception as e:
+        print("[Autocuracion ERROR]: No se pudo inicializar la tabla 'tecnico':", e)
+    finally:
+        if conn: conn.close()
 
 if __name__ == "__main__":
+    ensure_admin_records()
+    ensure_tecnico_records()
     print("RUTAS CARGADAS:", app.url_map)
     print("CondoManager API en http://localhost:5005")
     app.run(debug=True, host='0.0.0.0', port=5005)

@@ -631,10 +631,11 @@ async function submitNotificacion() {
   const tipo    = document.getElementById('notif-tipo')?.value || 'general';
   if (!titulo || !mensaje) { showToast('error', 'Campos requeridos', 'Título y mensaje son obligatorios.'); return; }
   try {
+    const adminUser = JSON.parse(sessionStorage.getItem('condoUser') || '{}');
     // Usa el endpoint broadcast que envía a todos los residentes activos
     const res  = await fetch(API + '/api/notificaciones/broadcast', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ titulo, mensaje, tipo })
+      body: JSON.stringify({ titulo, mensaje, tipo, admin_usuario_id: adminUser.id || null })
     });
     const data = await res.json();
     if (res.ok) {
@@ -729,6 +730,7 @@ async function abrirDetalleIncidencia(id) {
       set('inc-detalle-ubicacion', inc.Ubicacion || 'No especificada');
       set('inc-detalle-prioridad', inc.Prioridad || 'Normal');
       set('inc-detalle-descripcion', inc.Descripcion || 'Sin descripción detallada.');
+      set('inc-detalle-tecnico-nombre', inc.TecnicoNombre ? `${inc.TecnicoNombre} (${inc.TecnicoEspecialidad.charAt(0).toUpperCase() + inc.TecnicoEspecialidad.slice(1)})` : 'Ninguno');
       
       const badge = document.getElementById('inc-detalle-badge');
       if (badge) {
@@ -740,10 +742,57 @@ async function abrirDetalleIncidencia(id) {
       if (card) {
         card.style.borderColor = border[inc.Prioridad] || '#dde5ef';
       }
+
+      // Cargar técnicos dinámicamente en el select
+      const selectEl = document.getElementById('inc-detalle-tecnico-select');
+      if (selectEl) {
+        selectEl.innerHTML = '<option value="">Seleccionar...</option>';
+        try {
+          const techRes = await fetch(API + '/api/tecnicos');
+          const technicians = await techRes.json();
+          technicians.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.IdTecnico;
+            option.textContent = `${t.Nombre} – ${t.Especialidad.charAt(0).toUpperCase() + t.Especialidad.slice(1)}`;
+            selectEl.appendChild(option);
+          });
+          // Pre-seleccionar si ya está asignado
+          if (inc.TecnicoId) {
+            selectEl.value = inc.TecnicoId;
+          }
+        } catch (e) {
+          console.error("Error al cargar tecnicos en dropdown:", e);
+        }
+      }
     }
   } catch(e) {
      console.error("Error al cargar detalle:", e); }
   showPanel('detalle-incidencia', null, 'incidencias');
+}
+
+async function asignarTecnicoIncidencia() {
+  if (!currentIncidenciaId) { showToast('error', 'Error', 'Selecciona una incidencia.'); return; }
+  const selectEl = document.getElementById('inc-detalle-tecnico-select');
+  if (!selectEl) return;
+  const tecnicoId = selectEl.value;
+  
+  try {
+    const res = await fetch(`${API}/api/incidencias/${currentIncidenciaId}/estado`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tecnico_id: tecnicoId || 'null' })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('success', 'Técnico asignado', 'La asignación del técnico fue actualizada correctamente.');
+      abrirDetalleIncidencia(currentIncidenciaId);
+    } else {
+      showToast('error', 'Error', data.message || 'No se pudo asignar el técnico.');
+    }
+  } catch(e) {
+    console.error("Error al asignar tecnico:", e);
+    showToast('error', 'Error de conexión', 'No se pudo establecer conexión con el servidor.');
+  }
 }
 
 async function cambiarEstadoIncidencia(nuevoEstado) {
@@ -793,9 +842,7 @@ async function loadAnuncios() {
   const container = document.querySelector('#panel-lista-anuncios > div:last-child');
   if (!container) return;
   try {
-    const adminUser = JSON.parse(sessionStorage.getItem('condoUser') || '{}');
-    const adminId = adminUser.id || 1;
-    const res  = await fetch(`${API}/api/notificaciones/${adminId}`);
+    const res  = await fetch(`${API}/api/anuncios`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.length) {
@@ -812,7 +859,10 @@ async function loadAnuncios() {
           <div style="font-size:12px;color:#8a9ab5;">${n.FechaCreacion?new Date(n.FechaCreacion).toLocaleString('es-DO'):''}</div>
         </div>
         <div style="font-size:13.5px;color:#4a5a72;margin-bottom:10px;">${n.Mensaje||''}</div>
-        <span style="font-size:12px;color:#8a9ab5;">${n.Leida?' Leída':'🔵 Sin leer'}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#8a9ab5;">
+          <span>📢 Publicación oficial</span>
+          <span>Por: <strong>${n.Autor||'Administrador'}</strong> (${n.Cargo||'Gestión'})</span>
+        </div>
       </div>`).join('');
   } catch(e) {
      /* silent */ }

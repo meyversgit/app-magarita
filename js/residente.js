@@ -362,6 +362,16 @@ async function loadResidentIncidencias() {
                 </div>
               </div>
               <div style="font-size:13px;color:#4a5a72;padding:12px;background:#f8fafc;border-radius:8px;">${inc.Descripcion}</div>
+              ${inc.TecnicoId ? `
+              <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid #dde5ef;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:#4a5a72;">
+                <span>🛠️ Técnico Asignado: <strong>${inc.TecnicoNombre}</strong></span>
+                <span style="background:#eef2f6;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#0f2d52;">Esp: ${inc.TecnicoEspecialidad.charAt(0).toUpperCase() + inc.TecnicoEspecialidad.slice(1)}</span>
+              </div>
+              ` : `
+              <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid #dde5ef;font-size:11.5px;color:#8a9ab5;">
+                ⏳ Esperando asignación de técnico
+              </div>
+              `}
             </div>
         `).join('');
     } catch (e) {
@@ -731,17 +741,9 @@ function loadAnuncios() {
   if (!container) return;
   container.innerHTML = '<div style="text-align:center;padding:24px;color:#8a9ab5;font-size:13px;">Cargando anuncios...</div>';
 
-  // Reusar las notificaciones ya cargadas en memoria si existen
-  if (allNotificaciones && allNotificaciones.length) {
-    renderAnunciosPanel(allNotificaciones);
-    return;
-  }
-  // Si no, traerlas del servidor
-  fetch(`${API}/api/notificaciones/${currentUser.id}`)
+  fetch(`${API}/api/anuncios`)
     .then(r => r.json())
     .then(data => {
-      allNotificaciones = data;
-      renderNotifDropdown();
       renderAnunciosPanel(data);
     })
     .catch(() => {
@@ -792,7 +794,11 @@ function renderAnunciosPanel(notifs) {
         <div style="font-size:12px;color:#8a9ab5;">${fecha}</div>
       </div>
       <div style="font-size:15px;font-weight:700;color:#0f2d52;margin-bottom:8px;">${n.Titulo}</div>
-      <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;">${n.Mensaje||''}</div>
+      <div style="font-size:13.5px;color:#4a5a72;line-height:1.6;margin-bottom:12px;">${n.Mensaje||''}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#8a9ab5;">
+        <span>📢 Publicación oficial</span>
+        <span>Por: <strong>${n.Autor||'Administrador'}</strong> (${n.Cargo||'Gestión'})</span>
+      </div>
     </div>`;
   }).join('');
 }
